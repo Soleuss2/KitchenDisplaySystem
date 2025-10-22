@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Kapitak PakPak | Kiosk";
+}
+
+<link rel="stylesheet" href="~/css/kiosk.css" />
+
+
+
+
+<div class="container">
+    <h1>Welcome to Kapitak PakPak</h1>
+    <h2>How would you like to enjoy your wings?</h2>
+    <p>Choose your dining preference below</p>
+
+    <div class="choices">
+        <!-- Dine In -->
+        <form method="post" asp-action="SelectDining" onsubmit="showLoader()">
+            <input type="hidden" name="diningType" value="DineIn" />
+            <div class="card" onclick="this.parentElement.submit()">
+                <img src="~/images/dinein.png" alt="Dine In Logo" />
+                <h3>Dine In</h3>
+                <p>Enjoy unlimited wings in our cozy restaurant atmosphere.</p>
+            </div>
+        </form>
+
+        <!-- Take Out -->
+        <form method="post" asp-action="SelectDining" onsubmit="showLoader()">
+            <input type="hidden" name="diningType" value="TakeOut" />
+            <div class="card" onclick="this.parentElement.submit()">
+                <img src="~/images/takeout.png" alt="Take Out Logo" />
+                <h3>Take Out</h3>
+                <p>Order your favorites to-go and enjoy them anywhere!</p>
+            </div>
+        </form>
+    </div>
+</div>
