@@ -1,8 +1,20 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿
+using SelfOrderingSystemKiosk.Models;
+using SelfOrderingSystemKiosk.Services;
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddAuthorization();
 
+
+builder.Services.Configure<MongoDBSettings>(
+    builder.Configuration.GetSection("KitchenDatabase"));
+
+builder.Services.AddSingleton<KitchenDatabase>();
+builder.Services.AddSingleton<OrderService>();
+builder.Services.AddScoped<ChickenService>();
 // ✅ Enable Session Support (future use)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -30,7 +42,12 @@ app.UseAuthorization();
 app.UseSession();
 
 app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Kiosk}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Kiosk}/{action=Index}/{id?}");
+    pattern: "{controller=Orders}/{action=Index}/{id?}",
+    defaults: new { area = "Admin" });
 
 app.Run();
