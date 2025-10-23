@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\raino\\source\\repos\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj": {}
+    "D:\\IPT_Kitchen\\IPT_KitchenSystem\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj": {}
   },
   "projects": {
-    "C:\\Users\\raino\\source\\repos\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj": {
+    "D:\\IPT_Kitchen\\IPT_KitchenSystem\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\raino\\source\\repos\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
+        "projectUniqueName": "D:\\IPT_Kitchen\\IPT_KitchenSystem\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
         "projectName": "SelfOrderingSystemKiosk",
-        "projectPath": "C:\\Users\\raino\\source\\repos\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
-        "packagesPath": "C:\\Users\\raino\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\raino\\source\\repos\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk\\obj\\",
+        "projectPath": "D:\\IPT_Kitchen\\IPT_KitchenSystem\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
+        "packagesPath": "C:\\Users\\Sacky\\.nuget\\packages\\",
+        "outputPath": "D:\\IPT_Kitchen\\IPT_KitchenSystem\\SelfOrderingSystemKiosk\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\raino\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Sacky\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -49,6 +49,16 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "MongoDB.Bson": {
+              "target": "Package",
+              "version": "[3.5.0, )"
+            },
+            "MongoDB.Driver": {
+              "target": "Package",
+              "version": "[3.5.0, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
