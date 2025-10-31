@@ -1,5 +1,7 @@
 wwwroot\css\Kiosk.css
 wwwroot\css\Menu.css
+wwwroot\css\modals.css
+wwwroot\css\order_tracking.css
 wwwroot\css\site.css
 wwwroot\favicon.ico
 wwwroot\fonts\Kameron-zlDL.ttf
@@ -12,6 +14,9 @@ wwwroot\images\sample_wing.png
 wwwroot\images\takeout.png
 wwwroot\images\unlimited.png
 wwwroot\images\wings.png
+wwwroot\js\booking_cart.js
+wwwroot\js\order_status.js
+wwwroot\js\order_tracking.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css

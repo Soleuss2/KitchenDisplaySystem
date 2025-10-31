@@ -9,57 +9,57 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = SelfOrderingSystemKiosk
 build_property.RootNamespace = SelfOrderingSystemKiosk
-build_property.ProjectDir = C:\Users\raino\source\repos\SelfOrderingSystemKiosk\SelfOrderingSystemKiosk\
+build_property.ProjectDir = C:\Users\raino\Source\Repos\KitchenDisplaySystem\SelfOrderingSystemKiosk\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\raino\source\repos\SelfOrderingSystemKiosk\SelfOrderingSystemKiosk
+build_property.MSBuildProjectDirectory = C:\Users\raino\Source\Repos\KitchenDisplaySystem\SelfOrderingSystemKiosk
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Home/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Admin/Views/Orders/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcT3JkZXJzXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Home/Privacy.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Kiosk/ChooseExperience.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcS2lvc2tcQ2hvb3NlRXhwZXJpZW5jZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Kiosk/ChooseExperience.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcS2lvc2tcQ2hvb3NlRXhwZXJpZW5jZS5jc2h0bWw=
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Kiosk/Confirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcS2lvc2tcQ29uZmlybWF0aW9uLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Kiosk/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcS2lvc2tcSW5kZXguY3NodG1s
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Kiosk/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcS2lvc2tcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Kiosk/UnlimitedMenu.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcS2lvc2tcVW5saW1pdGVkTWVudS5jc2h0bWw=
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Kiosk/UnlimitedMenu.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcS2lvc2tcVW5saW1pdGVkTWVudS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Shared/Error.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Shared/_Loader.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2FkZXIuY3NodG1s
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Shared/_Loader.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcU2hhcmVkXF9Mb2FkZXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Shared/_ValidationScriptsPartial.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/_ViewImports.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/_ViewStart.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/raino/source/repos/SelfOrderingSystemKiosk/SelfOrderingSystemKiosk/Views/Shared/_Layout.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
-build_metadata.AdditionalFiles.CssScope = b-0dg84bxwos
+[C:/Users/raino/source/repos/KitchenDisplaySystem/SelfOrderingSystemKiosk/Areas/Customer/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQ3VzdG9tZXJcVmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-xh7mad21zn

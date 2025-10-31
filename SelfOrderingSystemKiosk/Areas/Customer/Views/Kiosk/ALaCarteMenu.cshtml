@@ -1,0 +1,237 @@
+﻿@model IEnumerable<SelfOrderingSystemKiosk.Models.ChickenFlavors>
+@{
+    ViewData["Title"] = "Ala Carte Menu";
+    Layout = "~/Areas/Customer/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/kiosk.css" />
+<link rel="stylesheet" href="~/css/Menu.css" />
+@await Html.PartialAsync("_Loader")
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<div class="container">
+    <!-- 🔙 Back Button -->
+    <form asp-action="ChooseExperience" method="get" style="position:absolute;top:30px;left:40px;">
+        <button type="submit" class="back-btn" title="Back to Experience Selection">
+            <i class="bi bi-arrow-left-circle-fill" style="font-size: 2rem;"></i>
+        </button>
+    </form>
+
+    <div class="menu-container">
+        <!-- LEFT: MENU LIST -->
+        <div class="menu-list">
+            <div class="menu-header">
+                <h1>CHICKEN WINGS MENU</h1>
+                <p>Order your favorite dishes with ease</p>
+
+                <h2 style="margin-top:20px;">ALA CARTE MENU</h2>
+                <p>Pick and enjoy our flavorful chicken wings and special sides</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="menu-tabs">
+                <button class="active"><i class="bi bi-grid-1x2-fill"></i> All Items</button>
+                <button><img src="~/images/wings.png" alt="Wings Icon" /> Wings</button>
+                <button><img src="~/images/appetize.png" alt="Appetizer Icon" /> Appetizer</button>
+                <button><i class="bi bi-basket"></i> Add-Ons</button>
+            </div>
+
+            <!-- Scrollable Menu Items -->
+            <div class="menu-scroll">
+                @foreach (var item in Model)
+                {
+                    <div class="menu-row">
+                        <img src="@Url.Content(item.Image)" alt="@item.Name" />
+                        <div class="menu-details">
+                            <h4>@item.Name.ToUpper()</h4>
+                            <p>₱@item.Price.ToString("0.00")</p>
+                        </div>
+                        <button class="add-to-cart"
+                                data-name="@item.Name"
+                                data-price="@item.Price"
+                                data-image="@Url.Content(item.Image)">
+                            Add to cart
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- RIGHT: ORDER SUMMARY -->
+        <div class="order-summary">
+            <div class="summary-header">
+                <h3>Order Summary</h3>
+                <p class="item-count">0 Items</p>
+            </div>
+
+            <div class="summary-list">
+                <div class="empty-cart">
+                    <i class="bi bi-cart-x-fill" style="font-size: 3rem;"></i>
+                    <p>Your cart is empty<br>Add items from the menu to get started</p>
+                </div>
+            </div>
+
+            <div class="summary-footer">
+                <p class="order-total">TOTAL: ₱0.00</p>
+                <button class="confirm-btn">CONFIRM ORDER</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cart array to store items
+    let cart = [];
+
+    // Add to cart functionality
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const name = this.getAttribute('data-name');
+            const price = parseFloat(this.getAttribute('data-price'));
+            const image = this.getAttribute('data-image');
+
+            // Check if item already exists in cart
+            const existingItem = cart.find(item => item.name === name);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    name: name,
+                    price: price,
+                    image: image,
+                    quantity: 1
+                });
+            }
+
+            updateCartDisplay();
+
+            // Visual feedback
+            this.textContent = 'Added!';
+            this.style.backgroundColor = '#28a745';
+            setTimeout(() => {
+                this.textContent = 'Add to cart';
+                this.style.backgroundColor = '';
+            }, 500);
+        });
+    });
+
+    // Update cart display
+    function updateCartDisplay() {
+        const summaryList = document.querySelector('.summary-list');
+        const itemCount = document.querySelector('.item-count');
+        const orderTotal = document.querySelector('.order-total');
+
+        summaryList.innerHTML = '';
+
+        if (cart.length === 0) {
+            summaryList.innerHTML = `
+                <div class="empty-cart">
+                    <i class="bi bi-cart-x-fill" style="font-size: 3rem;"></i>
+                    <p>Your cart is empty<br>Add items from the menu to get started</p>
+                </div>
+            `;
+            itemCount.textContent = '0 Items';
+            orderTotal.textContent = 'TOTAL: ₱0.00';
+            return;
+        }
+
+        cart.forEach((item, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'cart-item';
+            itemDiv.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;">
+                <div style="flex:1;margin-left:10px;">
+                    <h5 style="margin:0;font-size:14px;">${item.name}</h5>
+                    <p style="margin:0;color:#666;">₱${item.price.toFixed(2)}</p>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button class="qty-btn minus" data-index="${index}">-</button>
+                    <span class="qty">${item.quantity}</span>
+                    <button class="qty-btn plus" data-index="${index}">+</button>
+                    <button class="remove-btn" data-index="${index}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            summaryList.appendChild(itemDiv);
+        });
+
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        itemCount.textContent = `${totalItems} Item${totalItems !== 1 ? 's' : ''}`;
+        orderTotal.textContent = `TOTAL: ₱${totalPrice.toFixed(2)}`;
+
+        addCartEventListeners();
+    }
+
+    // Add event listeners for cart buttons
+    function addCartEventListeners() {
+        document.querySelectorAll('.qty-btn.plus').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.getAttribute('data-index'));
+                cart[index].quantity += 1;
+                updateCartDisplay();
+            });
+        });
+
+        document.querySelectorAll('.qty-btn.minus').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.getAttribute('data-index'));
+                if (cart[index].quantity > 1) {
+                    cart[index].quantity -= 1;
+                } else {
+                    cart.splice(index, 1);
+                }
+                updateCartDisplay();
+            });
+        });
+
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.getAttribute('data-index'));
+                cart.splice(index, 1);
+                updateCartDisplay();
+            });
+        });
+    }
+
+    // Confirm order button
+    document.querySelector('.confirm-btn').addEventListener('click', function() {
+        if (cart.length === 0) {
+            alert('Please add items to your cart first!');
+            return;
+        }
+
+        const formData = new FormData();
+
+        cart.forEach((item, index) => {
+            formData.append(`Items[${index}].ItemName`, item.name);
+            formData.append(`Items[${index}].Price`, item.price);
+            formData.append(`Items[${index}].Quantity`, item.quantity);
+        });
+
+        document.querySelector('.loader-overlay').style.display = 'flex';
+
+        fetch('/Customer/Kiosk/ConfirmOrder', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.querySelector('.loader-overlay').style.display = 'none';
+            if (data.success) {
+                window.location.href = `/Customer/Kiosk/Confirmation?orderNumber=${data.orderNumber}`;
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            document.querySelector('.loader-overlay').style.display = 'none';
+            alert('Error: ' + error);
+        });
+    });
+</script>

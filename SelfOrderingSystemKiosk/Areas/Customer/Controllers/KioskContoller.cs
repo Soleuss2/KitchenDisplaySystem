@@ -43,10 +43,12 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             return RedirectToAction("ChooseExperience");
         }
 
-        public IActionResult AlaCarteMenu()
+        public async Task<IActionResult> AlaCarteMenu()
         {
             ViewBag.ExperienceType = TempData["ExperienceType"];
-            return View();
+
+            var flavors = await _chickenService.GetAllAsync() ?? new List<ChickenFlavors>();
+            return View(flavors);
         }
 
         public async Task<IActionResult> UnlimitedMenu()
@@ -54,6 +56,8 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             var flavors = await _chickenService.GetAllAsync() ?? new List<ChickenFlavors>();
             return View(flavors);
         }
+
+
 
         [HttpPost]
         public async Task<IActionResult> ConfirmOrder([FromForm] List<OrderItem> Items)

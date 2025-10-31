@@ -47,7 +47,9 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Orders}/{action=Index}/{id?}",
-    defaults: new { area = "Admin" });
+    pattern: "{controller=Kiosk}/{action=Index}/{id?}",
+    defaults: new { area = "Customer" });
+
+
 
 app.Run();
