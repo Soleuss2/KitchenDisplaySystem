@@ -610,7 +610,7 @@
       "projectName": "SelfOrderingSystemKiosk",
       "projectPath": "C:\\Users\\raino\\Source\\Repos\\KitchenDisplaySystem\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
       "packagesPath": "C:\\Users\\raino\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\raino\\Source\\Repos\\KitchenDisplaySystem\\SelfOrderingSystemKiosk\\obj\\",
+      "outputPath": "C:\\Users\\raino\\source\\repos\\KitchenDisplaySystem\\SelfOrderingSystemKiosk\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
