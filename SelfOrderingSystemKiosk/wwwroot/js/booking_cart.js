@@ -129,9 +129,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     showNotification(`You can only order up to ${quantityLimit} pcs per flavor.`, 'error');
                     return;
                 }
-                existingItem.quantity += 2;
+                existingItem.quantity += 1;
             } else {
-                cart.push({ name, image, quantity: 2 });
+                cart.push({ name, image, quantity: 1 });
             }
 
             updateCartDisplay();
@@ -223,38 +223,43 @@ function updateCartDisplay() {
 
 // 🔁 Add event listeners for cart quantity buttons
 function addCartEventListeners() {
-    document.querySelectorAll('.qty-btn.plus').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const index = parseInt(this.getAttribute('data-index'));
-            const quantityLimit = getQuantityLimit();
+    // Use event delegation instead of adding multiple listeners
+    const summaryList = document.querySelector('.summary-list');
 
+    // Remove old listener if exists
+    const oldList = summaryList.cloneNode(true);
+    summaryList.parentNode.replaceChild(oldList, summaryList);
+
+    // Add single delegated listener
+    document.querySelector('.summary-list').addEventListener('click', function (e) {
+        const target = e.target.closest('button');
+        if (!target) return;
+
+        const index = parseInt(target.getAttribute('data-index'));
+
+        if (target.classList.contains('plus')) {
+            const quantityLimit = getQuantityLimit();
             if (cart[index].quantity >= quantityLimit) {
                 showNotification(`You can only order up to ${quantityLimit} pcs per flavor.`, 'error');
                 return;
             }
-
-            cart[index].quantity += 2;
+            cart[index].quantity += 1;
             updateCartDisplay();
-        });
-    });
+        }
 
-    document.querySelectorAll('.qty-btn.minus').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const index = parseInt(this.getAttribute('data-index'));
-            if (cart[index].quantity > 2) {
-                cart[index].quantity -= 2;
+        else if (target.classList.contains('minus')) {
+            if (cart[index].quantity > 1) {
+                cart[index].quantity -= 1;
             } else {
                 cart.splice(index, 1);
             }
             updateCartDisplay();
-        });
-    });
+        }
 
-    document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const index = parseInt(this.getAttribute('data-index'));
+        else if (target.classList.contains('remove-btn') || target.closest('.remove-btn')) {
             cart.splice(index, 1);
             updateCartDisplay();
-        });
+        }
     });
+}
 }

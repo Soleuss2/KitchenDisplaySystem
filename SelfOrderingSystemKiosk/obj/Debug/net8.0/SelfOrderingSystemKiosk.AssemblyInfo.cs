@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SelfOrderingSystemKiosk")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+07650aa1183d17be6ed49c5f8ea339388613f8ef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+35bc8f650178a0ab3212fdb3a16482b4a64cf3ec")]
 [assembly: System.Reflection.AssemblyProductAttribute("SelfOrderingSystemKiosk")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SelfOrderingSystemKiosk")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

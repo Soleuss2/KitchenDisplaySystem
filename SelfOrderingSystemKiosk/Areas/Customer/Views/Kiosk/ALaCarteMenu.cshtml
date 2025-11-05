@@ -216,6 +216,15 @@
 
         document.querySelector('.loader-overlay').style.display = 'flex';
 
+        fetch('/Customer/Kiosk/ConfirmOrder?orderType=AlaCarte', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderItems)
+    })
+
+
         fetch('/Customer/Kiosk/ConfirmOrder', {
             method: 'POST',
             body: formData

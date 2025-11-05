@@ -43,13 +43,12 @@ app.UseSession();
 
 app.MapControllerRoute(
     name: "areas",
-    pattern: "{area:exists}/{controller=Kiosk}/{action=Index}/{id?}");
+    pattern: "{area:exists}/{controller=Kitchen}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Kiosk}/{action=Index}/{id?}",
-    defaults: new { area = "Customer" });
-
+    pattern: "{area=Customer}/{controller=Kiosk}/{action=Index}/{id?}");
 
 
 app.Run();
+    

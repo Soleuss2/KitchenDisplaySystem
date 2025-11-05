@@ -36,34 +36,35 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         public IActionResult SelectExperience(string experienceType)
         {
             TempData["ExperienceType"] = experienceType;
-
             if (experienceType == "Unlimited") return RedirectToAction("UnlimitedMenu");
             if (experienceType == "AlaCarte") return RedirectToAction("AlaCarteMenu");
-
             return RedirectToAction("ChooseExperience");
         }
 
         public async Task<IActionResult> AlaCarteMenu()
         {
-            ViewBag.ExperienceType = TempData["ExperienceType"];
-
+            TempData.Keep("ExperienceType"); // Keep it for the next request
+            ViewBag.ExperienceType = "AlaCarte";
             var flavors = await _chickenService.GetAllAsync() ?? new List<ChickenFlavors>();
             return View(flavors);
         }
 
         public async Task<IActionResult> UnlimitedMenu()
         {
+            TempData.Keep("ExperienceType"); // Keep it for the next request
+            ViewBag.ExperienceType = "Unlimited";
             var flavors = await _chickenService.GetAllAsync() ?? new List<ChickenFlavors>();
             return View(flavors);
         }
 
-
-
         [HttpPost]
-        public async Task<IActionResult> ConfirmOrder([FromForm] List<OrderItem> Items)
+        public async Task<IActionResult> ConfirmOrder([FromBody] List<OrderItem> Items, [FromQuery] string orderType)
         {
             if (Items == null || !Items.Any())
                 return Json(new { success = false, message = "No items in the order" });
+
+            // Get orderType from TempData if not in query string
+            string experienceType = orderType ?? TempData["ExperienceType"]?.ToString() ?? "AlaCarte";
 
             decimal subtotal = Items.Sum(i => i.Price * i.Quantity);
             decimal tax = subtotal * 0.12m;
@@ -77,6 +78,7 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                 OrderNumber = orderNumber,
                 OrderDate = DateTime.Now,
                 Status = "Pending",
+                OrderType = experienceType, // ✅ Store the order type
                 Subtotal = subtotal,
                 Tax = tax,
                 Total = total,
@@ -95,11 +97,10 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                 return RedirectToAction("Index");
 
             var order = await _orderService.GetByOrderNumberAsync(orderNumber);
-
             if (order == null)
                 return RedirectToAction("Index");
 
-            return View(order); // passes full Order to the view
+            return View(order);
         }
     }
 }

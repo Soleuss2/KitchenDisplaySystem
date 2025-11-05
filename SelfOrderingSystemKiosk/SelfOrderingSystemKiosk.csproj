@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Folder Include="Areas\Admin\Models\" />
+    <Folder Include="Areas\Kitchen\Models\" />
   </ItemGroup>
 
 </Project>

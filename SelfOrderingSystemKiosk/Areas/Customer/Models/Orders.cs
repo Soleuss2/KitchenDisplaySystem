@@ -15,6 +15,9 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Models
         [BsonElement("orderDate")]
         public DateTime OrderDate { get; set; }
 
+        [BsonElement("orderType")]
+        public string OrderType { get; set; }
+
         [BsonElement("items")]
         public List<OrderItem> Items { get; set; }
 
@@ -35,6 +38,7 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Models
             Items = new List<OrderItem>();
             OrderDate = DateTime.Now;
             Status = "Pending";
+            OrderType = "AlaCarte";
         }
     }
 

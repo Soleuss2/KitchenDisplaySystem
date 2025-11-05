@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SelfOrderingSystemKiosk.Areas.Customer.Models;
 using SelfOrderingSystemKiosk.Services;
 
-namespace SelfOrderingSystemKiosk.Areas.Admin.Controllers
+namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
 {
-    [Area("Admin")]
-    public class OrdersController : Controller
+
+    [Area("Kitchen")]
+    public class KitchenController : Controller
     {
         private readonly OrderService _orderService;
 
-        public OrdersController(OrderService orderService)
+        public KitchenController(OrderService orderService)
         {
             _orderService = orderService;
         }

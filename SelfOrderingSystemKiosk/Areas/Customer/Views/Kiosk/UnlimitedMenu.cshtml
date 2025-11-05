@@ -107,13 +107,13 @@
             Price: c.price
         }));
 
-        fetch('/Customer/Kiosk/ConfirmOrder', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderItems)
-        })
+        fetch('/Customer/Kiosk/ConfirmOrder?orderType=Unlimited', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderItems)
+    })
         .then(res => res.json())
         .then(data => {
             if(data.success){
