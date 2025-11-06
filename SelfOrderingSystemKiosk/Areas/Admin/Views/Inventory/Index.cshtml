@@ -1,0 +1,118 @@
+﻿@model IEnumerable<SelfOrderingSystemKiosk.Controllers.InventoryItem>
+@{
+    ViewData["Title"] = "Inventory Management";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content fade-in">
+    <div class="header">
+        <h1>📦 Inventory Management</h1>
+        <p>Monitor and manage your stock efficiently.</p>
+    </div>
+
+    <!-- Add Form -->
+    <div class="inventory-form">
+        <h2>Add New Item</h2>
+        <form method="post" asp-action="Add" onsubmit="return confirmAction('Add this new item?')">
+            <div class="form-row-horizontal">
+                <input type="text" name="item" placeholder="Item Name" required />
+                <input type="text" name="category" placeholder="Category" required />
+                <input type="number" name="stock" placeholder="Current Stock" required />
+                <input type="text" name="unit" placeholder="Unit (e.g. pcs, kg)" required />
+                <input type="number" name="reorderLevel" placeholder="Reorder Level" required />
+                <button type="submit" class="btn btn-add">Add Item</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        @if (Model != null && Model.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Stock</th>
+                        <th>Unit</th>
+                        <th>Reorder Level</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model)
+                    {
+                        <tr>
+                            <td>@i.Id</td>
+                            <td>@i.Item</td>
+                            <td>@i.Category</td>
+                            <td>@i.CurrentStock</td>
+                            <td>@i.Unit</td>
+                            <td>@i.ReorderLevel</td>
+                            <td>
+                                @if (i.Status == "Low Stock")
+                                {
+                                    <span class="status-badge low">@i.Status</span>
+                                }
+                                else if (i.Status == "Out of Stock")
+                                {
+                                    <span class="status-badge out">@i.Status</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge in">@i.Status</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a asp-action="Edit" asp-route-id="@i.Id" class="btn btn-edit" onclick="return confirmAction('Edit this item?')">Edit</a>
+                                    <form asp-action="Delete" method="post" style="display:inline;" onsubmit="return confirmAction('Are you sure you want to delete this item?')">
+                                        <input type="hidden" name="id" value="@i.Id" />
+                                        <button type="submit" class="btn btn-delete">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="no-data">No inventory items found.</p>
+        }
+    </div>
+</div>
+
+<!-- Success Message -->
+@if (TempData["Message"] != null)
+{
+    <div id="successPopup" class="confirm-popup active">
+        <h3>@TempData["Message"]</h3>
+        <div class="popup-buttons">
+            <button id="closePopup" class="popup-btn confirm">OK</button>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Confirmation popup logic
+        function confirmAction(message) {
+            return confirm(message);
+        }
+
+        // Auto-close success popup
+        document.addEventListener("DOMContentLoaded", function () {
+            const popup = document.getElementById("successPopup");
+            const closeBtn = document.getElementById("closePopup");
+            if (popup && closeBtn) {
+                closeBtn.addEventListener("click", () => popup.style.display = "none");
+                setTimeout(() => popup.style.display = "none", 2500);
+            }
+        });
+    </script>
+}

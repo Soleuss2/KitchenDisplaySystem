@@ -1,0 +1,75 @@
+﻿@model IEnumerable<SelfOrderingSystemKiosk.Controllers.MenuItem>
+@{
+    ViewData["Title"] = "Menu Management";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="header">
+        <h1>🍴 Menu Management</h1>
+        <p>Manage available dishes, prices, and categories.</p>
+    </div>
+
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success">@ViewBag.Message</div>
+    }
+
+    <div class="form-container">
+        <form method="post" asp-action="Add" class="form-inline">
+            <input type="text" name="name" placeholder="Menu Item" required />
+            <input type="text" name="category" placeholder="Category" required />
+            <input type="number" step="0.01" name="price" placeholder="Price" required />
+            <select name="availability" required>
+                <option value="Available">Available</option>
+                <option value="Unavailable">Unavailable</option>
+            </select>
+            <button type="submit" class="btn btn-edit">Add Item</button>
+        </form>
+    </div>
+
+    <div class="table-container">
+        @if (Model != null && Model.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Menu Item</th>
+                        <th>Category</th>
+                        <th>Price (₱)</th>
+                        <th>Availability</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model)
+                    {
+                        <tr>
+                            <td>@i.Id</td>
+                            <td>@i.Name</td>
+                            <td>@i.Category</td>
+                            <td>@i.Price.ToString("0.00")</td>
+                            <td>
+                                <span class="status @(i.Availability.ToLower())">@i.Availability</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a asp-action="Edit" asp-route-id="@i.Id" class="btn btn-edit">Edit</a>
+                                    <form asp-action="Delete" method="post" style="display:inline;">
+                                        <input type="hidden" name="id" value="@i.Id" />
+                                        <button type="submit" class="btn btn-delete">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No menu items found.</p>
+        }
+    </div>
+</div>

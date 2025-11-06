@@ -1,0 +1,112 @@
+﻿using SelfOrderingSystemKiosk.Models;
+using SelfOrderingSystemKiosk.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+using System.Security.Claims;
+
+namespace SelfOrderingSystemKiosk.Controllers
+{
+
+    [Area("Admin")]
+    public class AccountController : Controller
+    {
+        private readonly AuthService _authService;
+        private readonly UserService _userService;
+
+        public AccountController(AuthService authService, UserService userService)
+        {
+            _authService = authService;
+            _userService = userService;
+        }
+
+
+
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Login(AdminUser user)
+        {
+            if (user == null || string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Password))
+            {
+                ViewBag.Error = "Please enter both username and password.";
+                return View();
+            }
+
+            var existingUser = await _authService.ValidateUserAsync(user.Username, user.Password);
+
+            if (existingUser == null)
+            {
+                ViewBag.Error = "Invalid username or password.";
+                return View();
+            }
+
+            // ✅ Cookie authentication login
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, existingUser.Username),
+        new Claim(ClaimTypes.Role, existingUser.Role ?? "Admin")
+    };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult ForgotPassword(string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                ViewBag.Error = "Please enter your email address.";
+                return View();
+            }
+
+            ViewBag.Message = $"A password reset link has been sent to {email}.";
+            return View();
+        }
+
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login", "Account");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public IActionResult Signup()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> Signup(AdminUser user)
+        {
+            if (!ModelState.IsValid)
+                return View(user);
+
+            // Hash password
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            await _userService.CreateUserAsync(user);
+
+            TempData["Success"] = "New user registered successfully!";
+            return RedirectToAction("Signup");
+        }
+    }
+}

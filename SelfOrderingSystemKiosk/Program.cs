@@ -1,4 +1,8 @@
 ﻿
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using SelfOrderingSystemKiosk.Areas.Admin.Models;
 using SelfOrderingSystemKiosk.Models;
 using SelfOrderingSystemKiosk.Services;
 
@@ -8,13 +12,36 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddAuthorization();
 
+builder.Services.Configure<DataConSettings>(
+    builder.Configuration.GetSection("DataCon"));
 
 builder.Services.Configure<MongoDBSettings>(
     builder.Configuration.GetSection("KitchenDatabase"));
 
+builder.Services.Configure<AuthenticationSettings>(
+    builder.Configuration.GetSection("Authentication"));
+
+builder.Services.AddSingleton<IMongoDatabase>(sp =>
+{
+    var config = builder.Configuration;
+    var mongoClient = new MongoClient(config["DataCon:ConnectionString"]);
+    return mongoClient.GetDatabase(config["Authentication:DatabaseName"]);
+});
+
+builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<KitchenDatabase>();
 builder.Services.AddSingleton<OrderService>();
 builder.Services.AddScoped<ChickenService>();
+builder.Services.AddSingleton<AuthService>();
+
+builder.Services.AddSession();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Admin/Account/Login";
+        options.AccessDeniedPath = "/Admin/Account/AccessDenied";
+    });
 // ✅ Enable Session Support (future use)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -26,6 +53,7 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -35,7 +63,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 // ✅ Enable session
@@ -43,11 +71,11 @@ app.UseSession();
 
 app.MapControllerRoute(
     name: "areas",
-    pattern: "{area:exists}/{controller=Kitchen}/{action=Index}/{id?}");
+    pattern: "{area:exists}/{controller=Account}/{action=Login}/{id?}");
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{area=Customer}/{controller=Kiosk}/{action=Index}/{id?}");
+    pattern: "{area=Admin}/{controller=Account}/{action=Login}/{id?}");
 
 
 app.Run();

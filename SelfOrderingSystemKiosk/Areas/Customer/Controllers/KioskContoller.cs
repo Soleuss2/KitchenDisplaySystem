@@ -2,6 +2,7 @@
 using SelfOrderingSystemKiosk.Areas.Customer.Models;
 using SelfOrderingSystemKiosk.Models;
 using SelfOrderingSystemKiosk.Services;
+using Order = SelfOrderingSystemKiosk.Areas.Customer.Models.Order;
 
 namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
 {

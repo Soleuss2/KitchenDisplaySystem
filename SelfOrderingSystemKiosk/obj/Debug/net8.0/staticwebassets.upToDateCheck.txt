@@ -1,3 +1,4 @@
+wwwroot\css\admin.css
 wwwroot\css\Kiosk.css
 wwwroot\css\Menu.css
 wwwroot\css\modals.css

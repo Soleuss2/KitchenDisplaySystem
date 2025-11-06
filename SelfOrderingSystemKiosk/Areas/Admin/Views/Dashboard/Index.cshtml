@@ -1,0 +1,73 @@
+﻿@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    var labelsJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Labels);
+    var valuesJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Values);
+}
+
+<div class="dashboard-container">
+    <h1>Admin Dashboard</h1>
+    <p>Overview of key statistics</p>
+
+    <div class="chart-container">
+        <canvas id="statsChart"></canvas>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('statsChart');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(labelsJson),
+                datasets: [{
+                    label: 'Statistics',
+                    data: @Html.Raw(valuesJson),
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.7)',
+                        'rgba(46, 204, 113, 0.7)',
+                        'rgba(241, 196, 15, 0.7)',
+                        'rgba(231, 76, 60, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(52, 152, 219, 1)',
+                        'rgba(46, 204, 113, 1)',
+                        'rgba(241, 196, 15, 1)',
+                        'rgba(231, 76, 60, 1)'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { color: '#333' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#333' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#fff',
+                        borderColor: '#ccc',
+                        borderWidth: 1,
+                        titleColor: '#333',
+                        bodyColor: '#333'
+                    }
+                }
+            }
+        });
+    </script>
+}

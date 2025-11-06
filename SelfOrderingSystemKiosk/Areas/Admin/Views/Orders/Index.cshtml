@@ -1,0 +1,100 @@
+﻿@model List<SelfOrderingSystemKiosk.Models.Order>
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Orders Management";
+}
+
+<div class="content">
+    <h1>🧾 Orders Management</h1>
+    <p>Track and update order statuses efficiently.</p>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="confirm-popup active" id="messagePopup">
+            <h3>@TempData["Message"]</h3>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm" onclick="closePopup()">OK</button>
+            </div>
+        </div>
+    }
+
+    <div class="table-container">
+        @if (Model != null && Model.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Date/Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model)
+                    {
+                        <tr>
+                            <td>@o.Id</td>
+                            <td>@o.Customer</td>
+                            <td>@o.Items</td>
+                            <td>₱@o.Total.ToString("N2")</td>
+                            <td>@o.DateTime.ToString("g")</td>
+                            <td>
+                                @if (o.Status == "Pending")
+                                {
+                                    <span style="color:#e67e22; font-weight:bold;">@o.Status</span>
+                                }
+                                else if (o.Status == "Completed")
+                                {
+                                    <span style="color:#27ae60; font-weight:bold;">@o.Status</span>
+                                }
+                                else if (o.Status == "Cancelled")
+                                {
+                                    <span style="color:#e74c3c; font-weight:bold;">@o.Status</span>
+                                }
+                                else
+                                {
+                                    <span>@o.Status</span>
+                                }
+                            </td>
+                            <td>
+                                <form method="post" asp-action="UpdateStatus" class="form-inline" onsubmit="return confirmUpdate(event, @o.Id)">
+                                    <select name="status" class="status-dropdown">
+                                        <option value="Pending" selected="@(o.Status == "Pending")">Pending</option>
+                                        <option value="Completed" selected="@(o.Status == "Completed")">Completed</option>
+                                        <option value="Cancelled" selected="@(o.Status == "Cancelled")">Cancelled</option>
+                                    </select>
+                                    <input type="hidden" name="id" value="@o.Id" />
+                                    <button type="submit" class="btn btn-edit">Update</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No orders found.</p>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmUpdate(event, id) {
+            event.preventDefault();
+            if (confirm("Are you sure you want to update Order #" + id + "?")) {
+                event.target.submit();
+            }
+            return false;
+        }
+
+        function closePopup() {
+            document.getElementById("messagePopup").style.display = "none";
+        }
+    </script>
+}

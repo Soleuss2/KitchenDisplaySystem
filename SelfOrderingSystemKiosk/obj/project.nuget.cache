@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "2JfYZG/ryVs=",
+  "dgSpecHash": "F6jGFsj1mVU=",
   "success": true,
   "projectFilePath": "E:\\KItchenSystemKiosk\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\Nyak\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Nyak\\.nuget\\packages\\dnsclient\\1.6.1\\dnsclient.1.6.1.nupkg.sha512",
     "C:\\Users\\Nyak\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\2.0.0\\microsoft.extensions.logging.abstractions.2.0.0.nupkg.sha512",
     "C:\\Users\\Nyak\\.nuget\\packages\\microsoft.netcore.platforms\\5.0.0\\microsoft.netcore.platforms.5.0.0.nupkg.sha512",

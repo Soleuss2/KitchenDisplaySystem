@@ -1,0 +1,35 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDS Admin Login</title>
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2 class="auth-title">🍽️ KDS Admin Login</h2>
+            <form asp-action="Login" method="post" class="auth-form">
+                <input type="text" name="Username" placeholder="Enter username" required autocomplete="username" autofocus />
+                <input type="password" name="Password" placeholder="Enter password" required autocomplete="current-password" />
+
+                <button type="submit" class="auth-btn">Sign In</button>
+
+                @if (ViewBag.Error != null)
+                {
+                    <p class="auth-error">@ViewBag.Error</p>
+                }
+
+                <div class="auth-links">
+                    <a asp-action="ForgotPassword" asp-controller="Account">Forgot Password?</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

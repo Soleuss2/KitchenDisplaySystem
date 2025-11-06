@@ -1,0 +1,98 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KDS Admin Panel</title>
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2 class="logo">KDS Admin</h2>
+            </div>
+
+            <ul class="nav-links">
+                <li><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">📊 Dashboard</a></li>
+                <li><a asp-area="Admin" asp-controller="Menu" asp-action="Index">🍔 Menu Management</a></li>
+                <li><a asp-area="Admin" asp-controller="Inventory" asp-action="Index">📦 Inventory</a></li>
+                <li><a asp-area="Admin" asp-controller="Orders" asp-action="Index">🧾 Orders</a></li>
+            </ul>
+
+            <div class="logout-section">
+                <a href="#" class="logout-btn" onclick="confirmLogout(event)">🚪 Logout</a>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <div class="main-content">
+            <header class="header">
+                <h1>@ViewData["Title"]</h1>
+            </header>
+
+            <main class="content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    @RenderSection("Scripts", required: false)
+
+    <script>
+        // ✅ Logout Confirmation
+        function confirmLogout(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: "Logout Confirmation",
+                text: "Are you sure you want to logout?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Yes, Logout"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/Account/Logout';
+                }
+            });
+        }
+
+        // ✅ Delete Confirmation
+        function confirmDelete(e, form) {
+            e.preventDefault();
+            Swal.fire({
+                title: "Are you sure?",
+                text: "This menu item will be permanently deleted.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Yes, delete it"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        }
+
+        // ✅ Display success message from TempData
+        @if (TempData["Message"] != null)
+        {
+                <text>
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: '@TempData["Message"]',
+                        confirmButtonColor: '#3085d6'
+                    });
+                </text>
+        }
+    </script>
+</body>
+</html>

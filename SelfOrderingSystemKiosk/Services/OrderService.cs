@@ -1,6 +1,6 @@
 ﻿using MongoDB.Driver;
 using SelfOrderingSystemKiosk.Areas.Customer.Models;
-using SelfOrderingSystemKiosk.Models;
+
 
 namespace SelfOrderingSystemKiosk.Services
 {
@@ -8,7 +8,7 @@ namespace SelfOrderingSystemKiosk.Services
     {
         private readonly IMongoCollection<Order> _orders;
 
-        public OrderService(KitchenDatabase db)
+        public OrderService(Models.KitchenDatabase db)
         {
             _orders = db.Database.GetCollection<Order>("Orders");
         }

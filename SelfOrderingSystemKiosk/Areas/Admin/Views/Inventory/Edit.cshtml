@@ -1,0 +1,28 @@
+﻿@model SelfOrderingSystemKiosk.Controllers.InventoryItem
+@{
+    ViewData["Title"] = "Edit Inventory Item";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="header">
+        <h2>✏️ Edit Inventory Item</h2>
+        <p>Update details for <strong>@Model.Item</strong></p>
+    </div>
+
+    <div class="form-container">
+        <form asp-action="Edit" method="post" class="form-inline">
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <input type="text" name="Item" value="@Model.Item" placeholder="Item Name" required />
+            <input type="text" name="Category" value="@Model.Category" placeholder="Category" required />
+            <input type="number" name="CurrentStock" value="@Model.CurrentStock" placeholder="Current Stock" required />
+            <input type="text" name="Unit" value="@Model.Unit" placeholder="Unit (e.g. pcs)" required />
+            <input type="number" name="ReorderLevel" value="@Model.ReorderLevel" placeholder="Reorder Level" required />
+
+            <div class="btn-group">
+                <button type="submit" class="btn btn-edit">Save Changes</button>
+                <a asp-action="Index" class="btn btn-delete">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
