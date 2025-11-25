@@ -37,6 +37,9 @@ button {
 /* =====================================
    AUTHENTICATION PAGES (LOGIN / FORGOT PASSWORD)
 ===================================== */
+/* =====================================
+   AUTHENTICATION PAGES (LOGIN / FORGOT PASSWORD)
+===================================== */
 .auth-body {
     background: linear-gradient(135deg, #fff4e6, #ffe8d1);
     display: flex;
@@ -47,12 +50,16 @@ button {
     font-family: 'Kameron', sans-serif;
 }
 
+/* Container ensures responsive center alignment */
 .auth-container {
     width: 100%;
     max-width: 380px;
     padding: 20px;
+    display: flex;
+    justify-content: center;
 }
 
+/* Main card */
 .auth-card {
     background-color: #fff;
     border-radius: 16px;
@@ -60,8 +67,11 @@ button {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     text-align: center;
     animation: fadeIn 0.5s ease-in-out;
+    width: 100%;
+    box-sizing: border-box;
 }
 
+/* Title */
 .auth-title {
     font-size: 1.9em;
     color: #d35400;
@@ -69,23 +79,32 @@ button {
     margin-bottom: 25px;
 }
 
-.auth-form input {
-    width: 100%;
-    padding: 12px 15px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    border: 2px solid #f0d7bf;
-    background: #fffaf5;
-    font-size: 1em;
-    transition: border 0.3s ease, box-shadow 0.3s ease;
+/* Form styling */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-    .auth-form input:focus {
-        border-color: #e67e22;
-        box-shadow: 0 0 6px rgba(230, 126, 34, 0.3);
-        outline: none;
+    .auth-form input {
+        width: 100%;
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        border: 2px solid #f0d7bf;
+        background: #fffaf5;
+        font-size: 1em;
+        transition: border 0.3s ease, box-shadow 0.3s ease;
+        box-sizing: border-box;
     }
 
+        .auth-form input:focus {
+            border-color: #e67e22;
+            box-shadow: 0 0 6px rgba(230, 126, 34, 0.3);
+            outline: none;
+        }
+
+/* Button styling */
 .auth-btn {
     width: 100%;
     padding: 12px;
@@ -97,6 +116,7 @@ button {
     font-size: 1em;
     transition: background-color 0.3s ease, transform 0.2s ease;
     box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3);
+    cursor: pointer;
 }
 
     .auth-btn:hover {
@@ -104,34 +124,54 @@ button {
         transform: translateY(-2px);
     }
 
-.auth-error {
-    color: #e74c3c;
+/* Messages */
+.auth-error,
+.auth-success {
     margin-top: 10px;
     font-weight: 600;
     font-size: 0.9em;
+    text-align: center;
+}
+
+.auth-error {
+    color: #e74c3c;
 }
 
 .auth-success {
     color: #27ae60;
-    margin-top: 10px;
-    font-weight: 600;
-    font-size: 0.9em;
 }
 
+/* Links */
 .auth-links {
     margin-top: 15px;
+    text-align: center;
 }
 
     .auth-links a {
         color: #d35400;
         font-weight: 600;
         transition: color 0.3s ease;
+        text-decoration: none;
     }
 
         .auth-links a:hover {
             color: #e67e22;
             text-decoration: underline;
         }
+
+/* Simple fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
 /* =====================================
    ALERT & STATUS STYLES

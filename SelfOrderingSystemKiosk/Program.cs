@@ -18,10 +18,10 @@ builder.Services.Configure<DataConSettings>(
 
 builder.Services.Configure<MongoDBSettings>(options =>
 {
-    // Bind Kitchen settings first
+    // Bind Kitchen settings 
     builder.Configuration.GetSection("KitchenDatabase").Bind(options);
 
-    // Then override the connection string with DataCon's value
+    // Connection string with DataCon's value
     options.ConnectionString = builder.Configuration["DataCon:ConnectionString"];
 });
 
@@ -29,7 +29,7 @@ builder.Services.Configure<AuthenticationSettings>(
     builder.Configuration.GetSection("Authentication"));
 
 
-// Register IMongoDatabase (Authentication database)
+
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var config = builder.Configuration;

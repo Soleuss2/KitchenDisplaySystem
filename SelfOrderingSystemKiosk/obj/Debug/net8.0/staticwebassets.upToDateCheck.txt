@@ -1,4 +1,3 @@
-wwwroot\css\admin.css
 wwwroot\css\Kiosk.css
 wwwroot\css\Menu.css
 wwwroot\css\modals.css
@@ -75,3 +74,4 @@ wwwroot\lib\jquery\dist\jquery.js
 wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
+wwwroot\css\admin.css
