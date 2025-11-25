@@ -30,25 +30,25 @@ namespace SelfOrderingSystemKiosk.Services
         }
 
 
-        // ✅ Create a new user
+        
         public async Task CreateUserAsync(AdminUser user)
         {
             await _users.InsertOneAsync(user);
         }
 
-        // ✅ Find user by username
+        
         public async Task<AdminUser?> GetUserByUsernameAsync(string username)
         {
             return await _users.Find(u => u.Username == username).FirstOrDefaultAsync();
         }
 
-        // ✅ Find user by email
+        
         public async Task<AdminUser?> GetUserByEmailAsync(string email)
         {
             return await _users.Find(u => u.Email == email).FirstOrDefaultAsync();
         }
 
-        // ✅ Validate login (username + password)
+        //  Validate login 
         public async Task<AdminUser?> ValidateLoginAsync(string username, string password)
         {
             var user = await GetUserByUsernameAsync(username);
@@ -59,7 +59,7 @@ namespace SelfOrderingSystemKiosk.Services
             return passwordValid ? user : null;
         }
 
-        // ✅ Optional: Count total users (for limiting signups)
+       
         public async Task<long> GetUserCountAsync()
         {
             return await _users.CountDocumentsAsync(FilterDefinition<AdminUser>.Empty);

@@ -18,7 +18,7 @@ namespace SelfOrderingSystemKiosk.Services
             _logger = logger;
         }
 
-        // Validate user credentials (case-insensitive username, trims input)
+        // Validate user credentials
         public async Task<AdminUser?> ValidateUserAsync(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
@@ -30,7 +30,7 @@ namespace SelfOrderingSystemKiosk.Services
             username = username.Trim();
             password = password.Trim();
 
-            // Case-insensitive exact match using regex anchored ^...$
+            
             var safe = Regex.Escape(username);
             var regex = new BsonRegularExpression($"^{safe}$", "i");
             var filter = Builders<AdminUser>.Filter.Regex(u => u.Username, regex);

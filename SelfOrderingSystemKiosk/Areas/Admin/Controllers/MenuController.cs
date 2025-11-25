@@ -7,6 +7,7 @@ namespace SelfOrderingSystemKiosk.Controllers
     [Area("Admin")]
     public class MenuController : Controller
     {
+        // temp data
         private static List<MenuItem> menuItems = new List<MenuItem>
         {
             new MenuItem { Id = 1, Name = "Classic Burger", Category = "Main Dish", Price = 120.00m, Availability = "Available" },

@@ -7,7 +7,7 @@ namespace SelfOrderingSystemKiosk.Controllers
     [Area("Admin")]
     public class InventoryController : Controller
     {
-        // Temporary in-memory data (replace with DB later)
+        // Temporary in-memory data 
         private static List<InventoryItem> inventory = new List<InventoryItem>
         {
             new InventoryItem { Id = 1, Item = "Burger Patty", Category = "Food", CurrentStock = 30, Unit = "pcs", ReorderLevel = 10, Status = "In Stock" },

@@ -12,21 +12,34 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddAuthorization();
 
+// Bind all settings classes
 builder.Services.Configure<DataConSettings>(
     builder.Configuration.GetSection("DataCon"));
 
-builder.Services.Configure<MongoDBSettings>(
-    builder.Configuration.GetSection("KitchenDatabase"));
+builder.Services.Configure<MongoDBSettings>(options =>
+{
+    // Bind Kitchen settings first
+    builder.Configuration.GetSection("KitchenDatabase").Bind(options);
+
+    // Then override the connection string with DataCon's value
+    options.ConnectionString = builder.Configuration["DataCon:ConnectionString"];
+});
 
 builder.Services.Configure<AuthenticationSettings>(
     builder.Configuration.GetSection("Authentication"));
 
+
+// Register IMongoDatabase (Authentication database)
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var config = builder.Configuration;
+
     var mongoClient = new MongoClient(config["DataCon:ConnectionString"]);
+
+    // This is your Users DB – keep it as is
     return mongoClient.GetDatabase(config["Authentication:DatabaseName"]);
 });
+
 
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<KitchenDatabase>();

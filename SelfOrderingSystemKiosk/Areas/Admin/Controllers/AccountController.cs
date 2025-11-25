@@ -47,7 +47,7 @@ namespace SelfOrderingSystemKiosk.Controllers
                 return View();
             }
 
-            // ✅ Cookie authentication login
+            // Checks if admin
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Name, existingUser.Username),
