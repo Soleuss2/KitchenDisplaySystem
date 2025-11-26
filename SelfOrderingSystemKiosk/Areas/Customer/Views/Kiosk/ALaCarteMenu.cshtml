@@ -200,38 +200,32 @@
     }
 
     // Confirm order button
-    document.querySelector('.confirm-btn').addEventListener('click', function() {
+           document.querySelector('.confirm-btn').addEventListener('click', function () {
+
         if (cart.length === 0) {
             alert('Please add items to your cart first!');
             return;
         }
 
-        const formData = new FormData();
-
-        cart.forEach((item, index) => {
-            formData.append(`Items[${index}].ItemName`, item.name);
-            formData.append(`Items[${index}].Price`, item.price);
-            formData.append(`Items[${index}].Quantity`, item.quantity);
-        });
+        const orderItems = cart.map(item => ({
+            itemName: item.name,
+            price: item.price,
+            quantity: item.quantity
+        }));
 
         document.querySelector('.loader-overlay').style.display = 'flex';
 
         fetch('/Customer/Kiosk/ConfirmOrder?orderType=AlaCarte', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(orderItems)
-    })
-
-
-        fetch('/Customer/Kiosk/ConfirmOrder', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderItems)
         })
         .then(response => response.json())
         .then(data => {
             document.querySelector('.loader-overlay').style.display = 'none';
+
             if (data.success) {
                 window.location.href = `/Customer/Kiosk/Confirmation?orderNumber=${data.orderNumber}`;
             } else {
@@ -242,5 +236,7 @@
             document.querySelector('.loader-overlay').style.display = 'none';
             alert('Error: ' + error);
         });
+
     });
+
 </script>

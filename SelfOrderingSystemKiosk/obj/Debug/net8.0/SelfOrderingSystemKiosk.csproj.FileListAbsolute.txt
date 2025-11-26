@@ -122,6 +122,7 @@ E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\SelfOrderingSyste
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\SelfOrderingSystemKiosk.runtimeconfig.json
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\SelfOrderingSystemKiosk.dll
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\SelfOrderingSystemKiosk.pdb
+E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\BCrypt.Net-Next.dll
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\DnsClient.dll
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\MongoDB.Bson.dll
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\MongoDB.Driver.dll
@@ -141,6 +142,7 @@ E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\SelfOrderingSyste
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\rjimswa.dswa.cache.json
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\scopedcss\Areas\Admin\Views\Shared\_Layout.cshtml.rz.scp.css
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\scopedcss\Areas\Customer\Views\Shared\_Layout.cshtml.rz.scp.css
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\scopedcss\bundle\SelfOrderingSystemKiosk.styles.css
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\scopedcss\projectbundle\SelfOrderingSystemKiosk.bundle.scp.css
@@ -155,5 +157,3 @@ E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\refint\SelfOrderi
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\SelfOrderingSystemKiosk.pdb
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\SelfOrderingSystemKiosk.genruntimeconfig.cache
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\ref\SelfOrderingSystemKiosk.dll
-E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\BCrypt.Net-Next.dll
-E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\scopedcss\Areas\Admin\Views\Shared\_Layout.cshtml.rz.scp.css

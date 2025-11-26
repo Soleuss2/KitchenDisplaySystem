@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using SelfOrderingSystemKiosk.Areas.Admin.Models;
@@ -28,24 +27,28 @@ builder.Services.Configure<MongoDBSettings>(options =>
 builder.Services.Configure<AuthenticationSettings>(
     builder.Configuration.GetSection("Authentication"));
 
+// ------------------
+// MongoDB DI Setup
+// ------------------
 
-
-builder.Services.AddSingleton<IMongoDatabase>(sp =>
+// Register a single IMongoClient for the app
+builder.Services.AddSingleton<IMongoClient>(sp =>
 {
-    var config = builder.Configuration;
-
-    var mongoClient = new MongoClient(config["DataCon:ConnectionString"]);
-
-    // This is your Users DB – keep it as is
-    return mongoClient.GetDatabase(config["Authentication:DatabaseName"]);
+    var config = sp.GetRequiredService<IConfiguration>();
+    var connectionString = config["DataCon:ConnectionString"];
+    return new MongoClient(connectionString);
 });
 
-
+// Register services that use IMongoClient instead of IMongoDatabase
+// Each service gets the database itself internally
+builder.Services.AddSingleton<StockService>();
 builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<AuthService>();
+
+// Other services
 builder.Services.AddSingleton<KitchenDatabase>();
 builder.Services.AddSingleton<OrderService>();
 builder.Services.AddScoped<ChickenService>();
-builder.Services.AddSingleton<AuthService>();
 
 builder.Services.AddSession();
 
@@ -62,6 +65,14 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+
+builder.Services.AddSingleton<IMongoDatabase>(sp =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    var config = sp.GetRequiredService<IConfiguration>();
+    var authDbName = config["Authentication:DatabaseName"] ?? "Users";
+    return client.GetDatabase(authDbName);
 });
 
 var app = builder.Build();
@@ -88,8 +99,7 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{area=Admin}/{controller=Account}/{action=Login}/{id?}");
+    pattern: "{area=Admin}/{controller=Dashboard}/{action=Index}/{id?}");
 
 
 app.Run();
-    

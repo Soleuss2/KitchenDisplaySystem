@@ -24,6 +24,14 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         public IActionResult SelectDining(string diningType)
         {
             TempData["DiningType"] = diningType;
+
+            if (diningType == "TakeOut")
+            {
+                // Skip experience selection and go straight to Ala Carte menu
+                return RedirectToAction("AlaCarteMenu");
+            }
+
+            // Dine In goes to experience selection
             return RedirectToAction("ChooseExperience");
         }
 
