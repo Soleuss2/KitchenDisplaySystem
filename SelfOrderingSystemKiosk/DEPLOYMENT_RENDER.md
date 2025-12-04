@@ -2,6 +2,8 @@
 
 Complete step-by-step guide to deploy your .NET Core MVC application to Render.
 
+> **⚠️ IMPORTANT:** Render doesn't have .NET SDK installed by default. **Use the Dockerfile method (Method 1)** - I've created a `Dockerfile` for you that includes .NET SDK automatically. This fixes the "dotnet: command not found" error.
+
 ## Prerequisites
 
 1. ✅ GitHub account with your code repository
@@ -53,6 +55,8 @@ Render will auto-detect .NET, but verify these settings:
 
 ### Build & Deploy Settings:
 
+**⚠️ IMPORTANT:** These commands are for Render's dashboard, NOT for running in PowerShell locally!
+
 **Build Command:**
 ```bash
 dotnet restore && dotnet publish -c Release -o ./publish
@@ -63,9 +67,20 @@ dotnet restore && dotnet publish -c Release -o ./publish
 dotnet ./publish/SelfOrderingSystemKiosk.dll
 ```
 
-**OR** if the above doesn't work, try:
+> **Note:** 
+> - These commands use `&&` which works in Linux/bash (Render's build environment)
+> - **DO NOT** run these in PowerShell - they will fail!
+> - **DO** copy-paste these directly into Render's dashboard
+> - Make sure the Start Command uses `SelfOrderingSystemKiosk.dll` (uppercase 'K')
+
+**Alternative Build Command** (if root directory is different):
 ```bash
-cd SelfOrderingSystemKiosk && dotnet restore && dotnet publish -c Release -o ./publish && dotnet ./publish/SelfOrderingSystemKiosk.dll
+cd SelfOrderingSystemKiosk; dotnet restore; dotnet publish -c Release -o ./publish
+```
+
+**Alternative Start Command** (if root directory is different):
+```bash
+cd SelfOrderingSystemKiosk; dotnet ./publish/SelfOrderingSystemKiosk.dll
 ```
 
 ### Environment:
@@ -111,24 +126,41 @@ For testing, start with **Free Plan**. You can upgrade later.
 ## Step 8: Verify Deployment
 
 ### Check Build Logs:
+
+**For Dockerfile method:**
 Look for:
+- ✅ `FROM mcr.microsoft.com/dotnet/sdk:8.0` - Pulling .NET SDK
+- ✅ `dotnet restore` - Success
+- ✅ `dotnet publish` - Success
+- ✅ `FROM mcr.microsoft.com/dotnet/aspnet:8.0` - Pulling runtime
+- ✅ Application started successfully
+
+**For Native build method:**
+Look for:
+- ✅ `Installing .NET SDK` - SDK installation
 - ✅ `dotnet restore` - Success
 - ✅ `dotnet publish` - Success
 - ✅ Application started successfully
 
 ### Common Build Issues:
 
+**Issue: "dotnet: command not found"**
+- **Fix**: Use Method 1 (Dockerfile) - it includes .NET SDK automatically
+- **OR** Use Method 2 with the curl command to install .NET SDK first
+
 **Issue: "Could not find project file"**
-- **Fix**: Set Root Directory to `SelfOrderingSystemKiosk`
+- **Fix**: Set Root Directory to `SelfOrderingSystemKiosk` if your project is in a subdirectory
 
 **Issue: "Build failed"**
 - Check build logs for specific errors
-- Verify .NET 8.0 SDK is available (Render supports it)
+- Try Method 1 (Dockerfile) - it's more reliable
+- Verify your `.csproj` file targets `net8.0`
 
 **Issue: "Application crashed"**
 - Check runtime logs
 - Verify environment variables are set correctly
 - Check MongoDB connection string format
+- Verify PORT environment variable is being used (already configured in Program.cs)
 
 ### Test Your Application:
 1. Once deployed, Render gives you a URL like: `https://your-app-name.onrender.com`
@@ -241,9 +273,14 @@ Render automatically checks if your app responds on the root URL.
 DataCon__ConnectionString = mongodb+srv://...
 ```
 
-### Build Command:
+### Build Command (Render - Linux/Bash):
 ```bash
 dotnet restore && dotnet publish -c Release -o ./publish
+```
+
+### Build Command (Local PowerShell Testing):
+```powershell
+dotnet restore; if ($?) { dotnet publish -c Release -o ./publish }
 ```
 
 ### Start Command:
@@ -255,6 +292,28 @@ dotnet ./publish/SelfOrderingSystemKiosk.dll
 ```
 https://your-service-name.onrender.com
 ```
+
+### Testing Build Locally (PowerShell):
+If you want to test the build process locally in PowerShell:
+```powershell
+# Navigate to project directory
+cd SelfOrderingSystemKiosk
+
+# Restore packages
+dotnet restore
+
+# Publish (if restore succeeded)
+if ($LASTEXITCODE -eq 0) {
+    dotnet publish -c Release -o ./publish
+}
+
+# Run (if publish succeeded)
+if ($LASTEXITCODE -eq 0) {
+    dotnet ./publish/SelfOrderingSystemKiosk.dll
+}
+```
+
+**Note:** Render uses Linux/bash, so `&&` works fine there. The PowerShell commands above are only for local testing.
 
 ## Next Steps After Deployment
 

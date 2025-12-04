@@ -5,14 +5,22 @@
 services:
   - type: web
     name: kitchen-system-kiosk
-    env: dotnet
-    buildCommand: dotnet restore && dotnet publish -c Release -o ./publish
-    startCommand: dotnet ./publish/SelfOrderingSystemKiosk.dll
+    env: docker
+    dockerfilePath: ./Dockerfile
+    # Dockerfile method is recommended - includes .NET SDK automatically
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: DataCon__ConnectionString
         sync: false  # Set this manually in Render dashboard for security
-    # Uncomment and set if your project is in a subdirectory
-    # rootDir: SelfOrderingSystemKiosk
+    # Alternative: Native .NET build (if Docker doesn't work)
+    # env: docker  # Sometimes works better than 'dotnet'
+    # buildCommand: |
+    #   curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0
+    #   export PATH="$PATH:$HOME/.dotnet"
+    #   dotnet restore
+    #   dotnet publish -c Release -o ./publish
+    # startCommand: |
+    #   export PATH="$PATH:$HOME/.dotnet"
+    #   dotnet ./publish/SelfOrderingSystemKiosk.dll
 
