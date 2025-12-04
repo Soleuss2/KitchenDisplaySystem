@@ -1,87 +1,123 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
+using SelfOrderingSystemKiosk.Models;
+using SelfOrderingSystemKiosk.Services;
 
 namespace SelfOrderingSystemKiosk.Controllers
 {
     [Area("Admin")]
     public class MenuController : Controller
     {
-        // temp data
-        private static List<MenuItem> menuItems = new List<MenuItem>
-        {
-            new MenuItem { Id = 1, Name = "Classic Burger", Category = "Main Dish", Price = 120.00m, Availability = "Available" },
-            new MenuItem { Id = 2, Name = "Cheese Fries", Category = "Side", Price = 80.00m, Availability = "Available" },
-            new MenuItem { Id = 3, Name = "Iced Coffee", Category = "Beverage", Price = 60.00m, Availability = "Unavailable" }
-        };
+        private readonly StockService _stockService;
 
-        public IActionResult Index(string message = null)
+        public MenuController(StockService stockService)
         {
-            ViewBag.Message = message;
-            return View(menuItems);
+            _stockService = stockService;
         }
 
+        public async Task<IActionResult> Index(string message = null)
+        {
+            ViewData["Title"] = "Menu & Inventory Management";
+            ViewBag.Message = message;
+            var items = await _stockService.GetAllAsync();
+            return View(items);
+        }
+
+
         [HttpPost]
-        public IActionResult Add(string name, string category, decimal price, string availability)
+        public async Task<IActionResult> Add(string name, string category, decimal price, string availability, int currentStock, string unit, int reorderLevel)
         {
             if (!string.IsNullOrEmpty(name))
             {
-                int newId = menuItems.Any() ? menuItems.Max(m => m.Id) + 1 : 1;
-                menuItems.Add(new MenuItem
+                // Set default image based on category
+                string defaultImage = category switch
                 {
-                    Id = newId,
-                    Name = name,
+                    "Wings" => "/images/wings.png",
+                    "Appetizer" => "/images/appetize.png",
+                    "Add Ons" => "/images/wings.png",
+                    _ => "/images/wings.png"
+                };
+
+                var newItem = new InventoryItem
+                {
+                    Item = name,
                     Category = category,
                     Price = price,
-                    Availability = availability
-                });
+                    Availability = availability,
+                    Image = defaultImage,
+                    CurrentStock = currentStock,
+                    Unit = unit ?? "pcs",
+                    ReorderLevel = reorderLevel,
+                    Status = currentStock <= reorderLevel ? "Low Stock" : "In Stock"
+                };
+
+                await _stockService.AddAsync(newItem);
             }
 
             return RedirectToAction("Index", new { message = "Menu item added successfully!" });
         }
 
         [HttpPost]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(string id)
         {
-            var item = menuItems.FirstOrDefault(m => m.Id == id);
-            if (item != null)
-                menuItems.Remove(item);
-
+            await _stockService.DeleteAsync(id);
             return RedirectToAction("Index", new { message = "Menu item deleted successfully!" });
         }
 
-        [HttpGet]
-        public IActionResult Edit(int id)
-        {
-            var item = menuItems.FirstOrDefault(m => m.Id == id);
-            if (item == null)
-                return RedirectToAction("Index");
-
-            return View(item);
-        }
-
         [HttpPost]
-        public IActionResult Edit(MenuItem updated)
+        public async Task<IActionResult> Edit(InventoryItem updated)
         {
-            var existing = menuItems.FirstOrDefault(m => m.Id == updated.Id);
+            var existing = await _stockService.GetByIdAsync(updated.Id);
             if (existing != null)
             {
-                existing.Name = updated.Name;
-                existing.Category = updated.Category;
-                existing.Price = updated.Price;
-                existing.Availability = updated.Availability;
+                // Preserve the existing image
+                updated.Image = existing.Image;
+                
+                // Set default image based on category if image is empty
+                if (string.IsNullOrEmpty(updated.Image))
+                {
+                    updated.Image = updated.Category switch
+                    {
+                        "Wings" => "/images/wings.png",
+                        "Appetizer" => "/images/appetize.png",
+                        "Add Ons" => "/images/wings.png",
+                        _ => "/images/wings.png"
+                    };
+                }
+                
+                updated.Status = updated.CurrentStock <= updated.ReorderLevel ? "Low Stock" : "In Stock";
+                await _stockService.UpdateAsync(updated);
             }
 
             return RedirectToAction("Index", new { message = "Menu item updated successfully!" });
         }
-    }
 
-    public class MenuItem
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-        public string? Category { get; set; }
-        public decimal Price { get; set; }
-        public string? Availability { get; set; }
+        [HttpPost]
+        public async Task<IActionResult> ToggleAvailability(string id, string availability)
+        {
+            try
+            {
+                await _stockService.ToggleAvailabilityAsync(id, availability);
+                
+                // Check if this is an AJAX request
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || 
+                    Request.Headers["Content-Type"].ToString().Contains("application/x-www-form-urlencoded"))
+                {
+                    return Json(new { success = true, message = $"Item availability set to {availability}!" });
+                }
+                
+                return RedirectToAction("Index", new { message = $"Item availability set to {availability}!" });
+            }
+            catch (Exception ex)
+            {
+                // Check if this is an AJAX request
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || 
+                    Request.Headers["Content-Type"].ToString().Contains("application/x-www-form-urlencoded"))
+                {
+                    return Json(new { success = false, message = "Failed to update availability." });
+                }
+                
+                return RedirectToAction("Index", new { message = "Failed to update availability." });
+            }
+        }
     }
 }

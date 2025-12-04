@@ -21,5 +21,20 @@ namespace SelfOrderingSystemKiosk.Models
         [BsonElement("image")]
         public string Image { get; set; }
 
+        [BsonElement("availability")]
+        public string Availability { get; set; } = "Available";
+
+        // Inventory fields
+        [BsonElement("currentStock")]
+        public int CurrentStock { get; set; } = 0;
+
+        [BsonElement("unit")]
+        public string Unit { get; set; } = "pcs";
+
+        [BsonElement("reorderLevel")]
+        public int ReorderLevel { get; set; } = 10;
+
+        [BsonElement("status")]
+        public string Status { get; set; } = "In Stock";
     }
 }

@@ -71,7 +71,20 @@
             border-radius: 20px;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
         }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            }
+
+            .stat-card.active {
+                background: rgba(255, 255, 255, 1);
+                box-shadow: 0 6px 25px rgba(0,0,0,0.25);
+                transform: scale(1.05);
+            }
 
             .stat-card h2 {
                 font-size: 3rem;
@@ -95,54 +108,6 @@
                 color: #4CAF50;
             }
 
-        .filter-tabs {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            background: rgba(255, 255, 255, 0.7);
-            border: none;
-            padding: 12px 25px;
-            border-radius: 30px;
-            font-size: 1rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-
-            .filter-btn:hover, .filter-btn.active {
-                background: rgba(255, 255, 255, 0.95);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            }
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-            .status-dot.pending {
-                background: #FFC107;
-            }
-
-            .status-dot.progress {
-                background: #2196F3;
-            }
-
-            .status-dot.completed {
-                background: #4CAF50;
-            }
-
-            .status-dot.canceled {
-                background: #F44336;
-            }
 
         .orders-grid {
             display: grid;
@@ -173,6 +138,11 @@
 
             .order-card.completed {
                 border-left-color: #4CAF50;
+            }
+
+            .order-card.canceled {
+                border-left-color: #F44336;
+                background: #FFEBEE;
             }
 
         .order-header {
@@ -299,6 +269,73 @@
                 background: #D4EDDA;
                 color: #155724;
             }
+
+            .status-badge.canceled {
+                background: #F8D7DA;
+                color: #721C24;
+            }
+
+        .date-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .date-filter-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+            .date-filter-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .date-filter-btn.active {
+                background: rgba(255, 255, 255, 1);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                transform: scale(1.05);
+            }
+
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .refresh-indicator.show {
+                display: flex;
+            }
+
+            .refresh-indicator .spinner {
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-top-color: white;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -310,48 +347,45 @@
         <button class="menu-btn" onclick="window.location.href='/'">
             📋 MENU
         </button>
+    </div>
 
+    <div class="refresh-indicator" id="refreshIndicator">
+        <div class="spinner"></div>
+        <span>Refreshing...</span>
+    </div>
+
+    <div class="date-filters">
+        <button class="date-filter-btn @(ViewBag.DateFilter == "all" || ViewBag.DateFilter == null ? "active" : "")" onclick="filterByDate('all')">
+            📅 All Time
+        </button>
+        <button class="date-filter-btn @(ViewBag.DateFilter == "day" ? "active" : "")" onclick="filterByDate('day')">
+            📆 Today
+        </button>
+        <button class="date-filter-btn @(ViewBag.DateFilter == "week" ? "active" : "")" onclick="filterByDate('week')">
+            📊 This Week
+        </button>
+        <button class="date-filter-btn @(ViewBag.DateFilter == "month" ? "active" : "")" onclick="filterByDate('month')">
+            📈 This Month
+        </button>
     </div>
 
     <div class="stats">
-        <div class="stat-card">
+        <div class="stat-card active" onclick="filterOrders('all')" data-filter="all">
             <h2>@totalOrders</h2>
             <p>Total Orders</p>
         </div>
-        <div class="stat-card pending">
+        <div class="stat-card pending" onclick="filterOrders('pending')" data-filter="pending">
             <h2>@pendingOrders</h2>
             <p>Pending</p>
         </div>
-        <div class="stat-card progress">
+        <div class="stat-card progress" onclick="filterOrders('in-progress')" data-filter="in-progress">
             <h2>@inProgressOrders</h2>
             <p>In progress</p>
         </div>
-        <div class="stat-card completed">
+        <div class="stat-card completed" onclick="filterOrders('completed')" data-filter="completed">
             <h2>@completedOrders</h2>
             <p>Completed</p>
         </div>
-    </div>
-
-    <div class="filter-tabs">
-        <button class="filter-btn active" onclick="filterOrders('all')">
-            All Orders
-        </button>
-        <button class="filter-btn" onclick="filterOrders('pending')">
-            <span class="status-dot pending"></span>
-            Pending
-        </button>
-        <button class="filter-btn" onclick="filterOrders('progress')">
-            <span class="status-dot progress"></span>
-            In Progress
-        </button>
-        <button class="filter-btn" onclick="filterOrders('completed')">
-            <span class="status-dot completed"></span>
-            Completed
-        </button>
-        <button class="filter-btn" onclick="filterOrders('canceled')">
-            <span class="status-dot canceled"></span>
-            Canceled
-        </button>
     </div>
 
     <div class="orders-grid">
@@ -372,7 +406,8 @@
                     </div>
                     <div class="order-time">
                         Ordered at<br>
-                        <strong>@order.OrderDate.ToString("hh:mm tt")</strong><br>
+                        <strong>@order.OrderDate.ToLocalTime().ToString("MMM dd, yyyy")</strong><br>
+                        <strong>@order.OrderDate.ToLocalTime().ToString("h:mm tt")</strong><br>
                         <span class="status-badge @statusClass">@order.Status</span>
                     </div>
                 </div>
@@ -400,31 +435,22 @@
                 <div class="order-actions">
                     @if (order.Status == "Pending")
                     {
-                        <button class="action-btn btn-pending" onclick="updateStatus('@order.Id', 'Pending')">
-                            ⏱️ Pending
-                        </button>
-                        <button class="action-btn btn-start" onclick="updateStatus('@order.Id', 'In Progress')">
+                        <button type="button" class="action-btn btn-start" onclick="updateStatus('@order.Id', 'In Progress', event)">
                             ▶️ Start
                         </button>
-                        <button class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed')">
+                        <button type="button" class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed', event)">
                             ✓ Done
-                        </button>
-                        <button class="action-btn btn-cancel" onclick="updateStatus('@order.Id', 'Canceled')">
-                            ✕ Cancel
                         </button>
                     }
                     else if (order.Status == "In Progress")
                     {
-                        <button class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed')">
+                        <button type="button" class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed', event)" style="grid-column: 1 / -1;">
                             ✓ Done
-                        </button>
-                        <button class="action-btn btn-cancel" onclick="updateStatus('@order.Id', 'Canceled')">
-                            ✕ Cancel
                         </button>
                     }
                     else
                     {
-                        <button class="action-btn btn-done" style="grid-column: 1 / -1;" disabled>
+                        <button type="button" class="action-btn btn-done" style="grid-column: 1 / -1;" disabled>
                             Order @order.Status
                         </button>
                     }
@@ -434,12 +460,19 @@
     </div>
 
     <script>
+        function filterByDate(dateFilter) {
+            // Reload page with date filter parameter
+            const url = new URL(window.location.href);
+            url.searchParams.set('dateFilter', dateFilter);
+            window.location.href = url.toString();
+        }
+
         function filterOrders(status) {
             const cards = document.querySelectorAll('.order-card');
-            const buttons = document.querySelectorAll('.filter-btn');
+            const statCards = document.querySelectorAll('.stat-card');
 
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.filter-btn').classList.add('active');
+            statCards.forEach(card => card.classList.remove('active'));
+            event.target.closest('.stat-card').classList.add('active');
 
             cards.forEach(card => {
                 if (status === 'all' || card.dataset.status === status) {
@@ -450,7 +483,31 @@
             });
         }
 
-        function updateStatus(orderId, newStatus) {
+        function updateStatus(orderId, newStatus, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            // Disable the clicked button immediately to prevent double-clicks
+            const clickedButton = event.target;
+            if (clickedButton) {
+                clickedButton.disabled = true;
+                clickedButton.style.opacity = '0.6';
+                clickedButton.style.cursor = 'not-allowed';
+            }
+
+            // Disable all buttons in the same order-actions container
+            const orderActions = clickedButton?.closest('.order-actions');
+            if (orderActions) {
+                const allButtons = orderActions.querySelectorAll('button');
+                allButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                    btn.style.cursor = 'not-allowed';
+                });
+            }
+
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/Kitchen/Kitchen/UpdateStatus';
@@ -470,6 +527,76 @@
             document.body.appendChild(form);
             form.submit();
         }
+
+        // Auto-refresh functionality
+        let refreshInterval;
+        const REFRESH_INTERVAL = 10000; // 10 seconds
+
+        function startAutoRefresh() {
+            // Clear any existing interval
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+
+            // Show refresh indicator before reload
+            const indicator = document.getElementById('refreshIndicator');
+            
+            refreshInterval = setInterval(function() {
+                // Only refresh if page is visible
+                if (!document.hidden) {
+                    // Show refresh indicator
+                    if (indicator) {
+                        indicator.classList.add('show');
+                    }
+                    
+                    // Get current filters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const dateFilter = urlParams.get('dateFilter') || 'all';
+                    
+                    // Reload page with current filters
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 500);
+                }
+            }, REFRESH_INTERVAL);
+        }
+
+        // Start auto-refresh when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            startAutoRefresh();
+        });
+
+        // Pause refresh when page is hidden, resume when visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
+                }
+            } else {
+                startAutoRefresh();
+            }
+        });
+
+        // Stop refresh when user is interacting (clicking buttons, etc.)
+        let userInteractionTimeout;
+        document.addEventListener('click', function() {
+            // Clear existing timeout
+            if (userInteractionTimeout) {
+                clearTimeout(userInteractionTimeout);
+            }
+            
+            // Temporarily stop refresh for 30 seconds after user interaction
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+            
+            // Resume after 30 seconds
+            userInteractionTimeout = setTimeout(function() {
+                startAutoRefresh();
+            }, 30000);
+        });
     </script>
 </body>
 </html>

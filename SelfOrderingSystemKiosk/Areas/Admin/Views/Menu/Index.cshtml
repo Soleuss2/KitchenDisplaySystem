@@ -1,13 +1,23 @@
-﻿@model IEnumerable<SelfOrderingSystemKiosk.Controllers.MenuItem>
+﻿@model IEnumerable<SelfOrderingSystemKiosk.Models.InventoryItem>
 @{
-    ViewData["Title"] = "Menu Management";
+    ViewData["Title"] = "Menu & Inventory Management";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
 }
 
 <div class="content">
-    <div class="header">
-        <h1>🍴 Menu Management</h1>
-        <p>Manage available dishes, prices, and categories.</p>
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h1>🍴 Menu & Inventory Management</h1>
+            <p>Manage menu items, inventory, prices, and availability all in one place.</p>
+            <p style="color: #666; font-size: 0.9em; margin-top: 5px;">
+                <i class="bi bi-info-circle"></i> Showing items from MongoDB Stock collection.
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-add" onclick="openAddModal()" style="padding: 12px 25px; font-size: 1rem;">
+                <i class="bi bi-plus-circle"></i> Add New Item
+            </button>
+        </div>
     </div>
 
     @if (ViewBag.Message != null)
@@ -15,29 +25,17 @@
         <div class="alert alert-success">@ViewBag.Message</div>
     }
 
-    <div class="form-container">
-        <form method="post" asp-action="Add" class="form-inline">
-            <input type="text" name="name" placeholder="Menu Item" required />
-            <input type="text" name="category" placeholder="Category" required />
-            <input type="number" step="0.01" name="price" placeholder="Price" required />
-            <select name="availability" required>
-                <option value="Available">Available</option>
-                <option value="Unavailable">Unavailable</option>
-            </select>
-            <button type="submit" class="btn btn-edit">Add Item</button>
-        </form>
-    </div>
-
     <div class="table-container">
         @if (Model != null && Model.Any())
         {
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Menu Item</th>
                         <th>Category</th>
                         <th>Price (₱)</th>
+                        <th>Stock</th>
+                        <th>Status</th>
                         <th>Availability</th>
                         <th>Actions</th>
                     </tr>
@@ -46,19 +44,60 @@
                     @foreach (var i in Model)
                     {
                         <tr>
-                            <td>@i.Id</td>
-                            <td>@i.Name</td>
-                            <td>@i.Category</td>
-                            <td>@i.Price.ToString("0.00")</td>
                             <td>
-                                <span class="status @(i.Availability.ToLower())">@i.Availability</span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    @if (!string.IsNullOrEmpty(i.Image))
+                                    {
+                                        <img src="@i.Image" alt="@i.Item" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;" />
+                                    }
+                                    <strong>@i.Item</strong>
+                                </div>
+                            </td>
+                            <td>@i.Category</td>
+                            <td>₱@i.Price.ToString("0.00")</td>
+                            <td>
+                                <span class="@(i.CurrentStock <= i.ReorderLevel ? "text-danger" : "text-success")">
+                                    @i.CurrentStock @i.Unit
+                                </span>
+                                @if (i.CurrentStock <= i.ReorderLevel)
+                                {
+                                    <br /><small style="color: #dc3545;">Reorder: @i.ReorderLevel</small>
+                                }
+                            </td>
+                            <td>
+                                <span class="status @(i.Status?.ToLower().Replace(" ", "-") ?? "in-stock")">@i.Status</span>
+                            </td>
+                            <td>
+                                <label class="availability-toggle" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                                    <input type="checkbox" 
+                                           class="availability-switch" 
+                                           data-id="@i.Id"
+                                           @(i.Availability == "Available" ? "checked" : "")
+                                           onchange="toggleAvailability('@i.Id', this.checked)" />
+                                    <span class="toggle-slider"></span>
+                                    <span class="availability-label" id="label-@i.Id">
+                                        @i.Availability
+                                    </span>
+                                </label>
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <a asp-action="Edit" asp-route-id="@i.Id" class="btn btn-edit">Edit</a>
+                                    <button type="button" 
+                                            class="btn btn-edit edit-item-btn" 
+                                            data-id="@i.Id"
+                                            data-name="@i.Item"
+                                            data-category="@i.Category"
+                                            data-price="@i.Price"
+                                            data-stock="@i.CurrentStock"
+                                            data-unit="@i.Unit"
+                                            data-reorder="@i.ReorderLevel"
+                                            data-availability="@i.Availability"
+                                            onclick="const btn = this; openEditModal(btn.getAttribute('data-id'), btn.getAttribute('data-name'), btn.getAttribute('data-category'), btn.getAttribute('data-price'), btn.getAttribute('data-stock'), btn.getAttribute('data-unit'), btn.getAttribute('data-reorder'), btn.getAttribute('data-availability'));">
+                                        Edit
+                                    </button>
                                     <form asp-action="Delete" method="post" style="display:inline;">
                                         <input type="hidden" name="id" value="@i.Id" />
-                                        <button type="submit" class="btn btn-delete">Delete</button>
+                                        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete this item?')">Delete</button>
                                     </form>
                                 </div>
                             </td>
@@ -73,3 +112,520 @@
         }
     </div>
 </div>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+<style>
+    /* Availability Toggle Switch */
+    .availability-toggle {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .availability-switch {
+        position: relative;
+        width: 50px;
+        height: 26px;
+        appearance: none;
+        background: #ccc;
+        border-radius: 13px;
+        outline: none;
+        cursor: pointer;
+        transition: background 0.3s;
+        margin: 0;
+    }
+
+    .availability-switch:checked {
+        background: #28a745;
+    }
+
+    .availability-switch:not(:checked) {
+        background: #dc3545;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.3s;
+        pointer-events: none;
+    }
+
+    .availability-switch:checked ~ .toggle-slider {
+        transform: translateX(24px);
+    }
+
+    .availability-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        min-width: 90px;
+    }
+
+    .availability-label.available {
+        color: #28a745;
+    }
+
+    .availability-label.unavailable {
+        color: #dc3545;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        position: relative;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #eee;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        color: #333;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: #999;
+        padding: 0;
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s;
+    }
+
+    .close-modal:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+
+    .modal-form {
+        display: grid;
+        gap: 15px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 10px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #ff6b35;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #eee;
+    }
+
+    .btn-cancel {
+        padding: 10px 20px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+    }
+
+    .btn-cancel:hover {
+        background: #5a6268;
+    }
+</style>
+
+<script>
+    function toggleAvailability(itemId, isAvailable) {
+        const availability = isAvailable ? 'Available' : 'Unavailable';
+        const label = document.getElementById('label-' + itemId);
+        
+        // Update label immediately for better UX
+        label.textContent = availability;
+        label.className = 'availability-label ' + availability.toLowerCase();
+        
+        // Send AJAX request
+        fetch('/Admin/Menu/ToggleAvailability', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'id=' + encodeURIComponent(itemId) + '&availability=' + encodeURIComponent(availability)
+        })
+        .then(response => {
+            if (response.ok) {
+                // Show success message
+                const message = availability === 'Available' 
+                    ? 'Item is now available on the menu!' 
+                    : 'Item is now hidden from the menu.';
+                
+                // Create temporary success message
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success';
+                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+                successMsg.textContent = message;
+                document.body.appendChild(successMsg);
+                
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 3000);
+            } else {
+                // Revert on error
+                const checkbox = document.querySelector(`[data-id="${itemId}"]`);
+                checkbox.checked = !isAvailable;
+                label.textContent = isAvailable ? 'Unavailable' : 'Available';
+                label.className = 'availability-label ' + (isAvailable ? 'unavailable' : 'available');
+                
+                alert('Failed to update availability. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert on error
+            const checkbox = document.querySelector(`[data-id="${itemId}"]`);
+            checkbox.checked = !isAvailable;
+            label.textContent = isAvailable ? 'Unavailable' : 'Available';
+            label.className = 'availability-label ' + (isAvailable ? 'unavailable' : 'available');
+            
+            alert('An error occurred. Please try again.');
+        });
+    }
+
+    // Modal Functions
+    function openAddModal() {
+        document.getElementById('addItemModal').classList.add('active');
+        document.getElementById('addItemForm').reset();
+    }
+
+    function closeAddModal() {
+        document.getElementById('addItemModal').classList.remove('active');
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('addItemModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeAddModal();
+        }
+    });
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAddModal();
+            closeEditModal();
+        }
+    });
+
+    // Edit Modal Functions
+    function openEditModal(id, name, category, price, stock, unit, reorderLevel, availability) {
+        try {
+            const modal = document.getElementById('editItemModal');
+            if (!modal) {
+                console.error('Edit modal not found');
+                return;
+            }
+            
+            modal.classList.add('active');
+            
+            // Populate form fields
+            const idField = document.getElementById('editItemId');
+            const nameField = document.getElementById('editItemName');
+            const categoryField = document.getElementById('editCategory');
+            const priceField = document.getElementById('editPrice');
+            const stockField = document.getElementById('editCurrentStock');
+            const unitField = document.getElementById('editUnit');
+            const reorderField = document.getElementById('editReorderLevel');
+            const availabilityField = document.getElementById('editAvailability');
+            
+            if (idField) idField.value = id || '';
+            if (nameField) nameField.value = name || '';
+            if (categoryField) categoryField.value = category || 'Wings';
+            if (priceField) priceField.value = price || '0';
+            if (stockField) stockField.value = stock || '0';
+            if (unitField) unitField.value = unit || 'pcs';
+            if (reorderField) reorderField.value = reorderLevel || '10';
+            if (availabilityField) availabilityField.value = availability || 'Available';
+        } catch (error) {
+            console.error('Error opening edit modal:', error);
+            alert('Error opening edit form. Please refresh the page and try again.');
+        }
+    }
+
+    // Use event delegation for edit buttons (works even if buttons are added dynamically)
+    document.addEventListener('click', function(e) {
+        // Check if clicked element or its parent has the edit-item-btn class
+        const button = e.target.closest('.edit-item-btn');
+        if (button) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Edit button clicked:', button);
+            const id = button.getAttribute('data-id');
+            const name = button.getAttribute('data-name');
+            console.log('Opening edit modal for:', id, name);
+            openEditModal(
+                id,
+                name,
+                button.getAttribute('data-category'),
+                button.getAttribute('data-price'),
+                button.getAttribute('data-stock'),
+                button.getAttribute('data-unit'),
+                button.getAttribute('data-reorder'),
+                button.getAttribute('data-availability')
+            );
+        }
+    });
+
+    function closeEditModal() {
+        const modal = document.getElementById('editItemModal');
+        if (modal) {
+            modal.classList.remove('active');
+            const form = document.getElementById('editItemForm');
+            if (form) {
+                form.reset();
+            }
+        }
+    }
+
+    // Set up edit modal click outside handler when DOM is ready
+    function setupEditModal() {
+        const editModal = document.getElementById('editItemModal');
+        if (editModal) {
+            editModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeEditModal();
+                }
+            });
+        }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupEditModal);
+    } else {
+        setupEditModal();
+    }
+</script>
+
+<!-- Add Item Modal -->
+<div class="modal-overlay" id="addItemModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="bi bi-plus-circle"></i> Add New Menu Item</h2>
+            <button type="button" class="close-modal" onclick="closeAddModal()">&times;</button>
+        </div>
+        <form method="post" asp-action="Add" id="addItemForm" class="modal-form">
+            <div class="form-group">
+                <label>Menu Item Name *</label>
+                <input type="text" name="name" placeholder="e.g., Buffalo Wings" required />
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select name="category" required>
+                        <option value="Wings">Wings</option>
+                        <option value="Appetizer">Appetizer</option>
+                        <option value="Add Ons">Add Ons</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price (₱) *</label>
+                    <input type="number" step="0.01" name="price" placeholder="0.00" required min="0" />
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Current Stock *</label>
+                    <input type="number" name="currentStock" placeholder="0" value="0" min="0" required />
+                </div>
+                <div class="form-group">
+                    <label>Unit *</label>
+                    <select name="unit" required>
+                        <option value="pcs" selected>pcs (pieces)</option>
+                        <option value="kg">kg (kilograms)</option>
+                        <option value="lbs">lbs (pounds)</option>
+                        <option value="oz">oz (ounces)</option>
+                        <option value="g">g (grams)</option>
+                        <option value="L">L (liters)</option>
+                        <option value="ml">ml (milliliters)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Reorder Level *</label>
+                    <input type="number" name="reorderLevel" placeholder="10" value="10" min="0" required />
+                </div>
+                <div class="form-group">
+                    <label>Availability *</label>
+                    <select name="availability" required>
+                        <option value="Available" selected>Available</option>
+                        <option value="Unavailable">Unavailable</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+                <button type="submit" class="btn btn-edit" onclick="document.getElementById('addItemForm').onsubmit = function() { setTimeout(closeAddModal, 100); }">Add Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Close modal after successful form submission
+    document.getElementById('addItemForm').addEventListener('submit', function() {
+        // Modal will close after redirect, but we can also close it immediately for better UX
+        setTimeout(function() {
+            closeAddModal();
+        }, 100);
+    });
+
+    // Close edit modal after successful form submission
+    document.getElementById('editItemForm').addEventListener('submit', function() {
+        setTimeout(function() {
+            closeEditModal();
+        }, 100);
+    });
+</script>
+
+<!-- Edit Item Modal -->
+<div class="modal-overlay" id="editItemModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="bi bi-pencil-square"></i> Edit Menu Item</h2>
+            <button type="button" class="close-modal" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form method="post" asp-action="Edit" id="editItemForm" class="modal-form">
+            <input type="hidden" name="Id" id="editItemId" />
+            
+            <div class="form-group">
+                <label>Menu Item Name *</label>
+                <input type="text" name="Item" id="editItemName" placeholder="e.g., Buffalo Wings" required />
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select name="Category" id="editCategory" required>
+                        <option value="Wings">Wings</option>
+                        <option value="Appetizer">Appetizer</option>
+                        <option value="Add Ons">Add Ons</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Price (₱) *</label>
+                    <input type="number" step="0.01" name="Price" id="editPrice" placeholder="0.00" required min="0" />
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Current Stock *</label>
+                    <input type="number" name="CurrentStock" id="editCurrentStock" placeholder="0" min="0" required />
+                </div>
+                <div class="form-group">
+                    <label>Unit *</label>
+                    <select name="Unit" id="editUnit" required>
+                        <option value="pcs">pcs (pieces)</option>
+                        <option value="kg">kg (kilograms)</option>
+                        <option value="lbs">lbs (pounds)</option>
+                        <option value="oz">oz (ounces)</option>
+                        <option value="g">g (grams)</option>
+                        <option value="L">L (liters)</option>
+                        <option value="ml">ml (milliliters)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Reorder Level *</label>
+                    <input type="number" name="ReorderLevel" id="editReorderLevel" placeholder="10" min="0" required />
+                </div>
+                <div class="form-group">
+                    <label>Availability *</label>
+                    <select name="Availability" id="editAvailability" required>
+                        <option value="Available">Available</option>
+                        <option value="Unavailable">Unavailable</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-edit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+

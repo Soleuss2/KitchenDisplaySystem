@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SelfOrderingSystemKiosk.Models.ChickenFlavors>
+﻿@model IEnumerable<SelfOrderingSystemKiosk.Models.InventoryItem>
 @{
     ViewData["Title"] = "Ala Carte Menu";
     Layout = "~/Areas/Customer/Views/Shared/_Layout.cshtml";
@@ -30,24 +30,24 @@
 
             <!-- Tabs -->
             <div class="menu-tabs">
-                <button class="active"><i class="bi bi-grid-1x2-fill"></i> All Items</button>
-                <button><img src="~/images/wings.png" alt="Wings Icon" /> Wings</button>
-                <button><img src="~/images/appetize.png" alt="Appetizer Icon" /> Appetizer</button>
-                <button><i class="bi bi-basket"></i> Add-Ons</button>
+                <button class="active" data-filter="all"><i class="bi bi-grid-1x2-fill"></i> All Items</button>
+                <button data-filter="Wings"><img src="~/images/wings.png" alt="Wings Icon" /> Wings</button>
+                <button data-filter="Appetizer"><img src="~/images/appetize.png" alt="Appetizer Icon" /> Appetizer</button>
+                <button data-filter="Add Ons"><i class="bi bi-basket"></i> Add-Ons</button>
             </div>
 
             <!-- Scrollable Menu Items -->
             <div class="menu-scroll">
                 @foreach (var item in Model)
                 {
-                    <div class="menu-row">
-                        <img src="@Url.Content(item.Image)" alt="@item.Name" />
+                    <div class="menu-row" data-category="@item.Category">
+                        <img src="@Url.Content(item.Image ?? "/images/wings.png")" alt="@item.Item" />
                         <div class="menu-details">
-                            <h4>@item.Name.ToUpper()</h4>
+                            <h4>@item.Item.ToUpper()</h4>
                             <p>₱@item.Price.ToString("0.00")</p>
                         </div>
                         <button class="add-to-cart"
-                                data-name="@item.Name"
+                                data-name="@item.Item"
                                 data-price="@item.Price"
                                 data-image="@Url.Content(item.Image)">
                             Add to cart
@@ -82,6 +82,34 @@
 <script>
     // Cart array to store items
     let cart = [];
+
+    // Category filter functionality
+    document.querySelectorAll('.menu-tabs button').forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            document.querySelectorAll('.menu-tabs button').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get filter value
+            const filter = this.getAttribute('data-filter');
+            const menuRows = document.querySelectorAll('.menu-row');
+            
+            // Filter menu items
+            menuRows.forEach(row => {
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else {
+                    const category = row.getAttribute('data-category');
+                    if (category === filter) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    });
 
     // Add to cart functionality
     document.querySelectorAll('.add-to-cart').forEach(button => {

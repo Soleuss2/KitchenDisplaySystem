@@ -107,8 +107,8 @@
             content: '';
             position: absolute;
             top: 20px;
-            left: 5%;
-            width: 90%;
+            left: 10%;
+            width: 80%;
             height: 4px;
             background: #dee2e6;
             z-index: 0;
@@ -118,7 +118,7 @@
         text-align: center;
         position: relative;
         z-index: 1;
-        width: 20%;
+        width: 33.33%;
     }
 
     .tracking-icon-horizontal {
@@ -145,6 +145,39 @@
 
     .tracking-step-horizontal.pending .tracking-icon-horizontal {
         background: #6c757d;
+    }
+
+    .status-badge-large {
+        display: inline-block;
+        padding: 15px 25px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+    }
+
+    .status-badge-large.pending {
+        background: #fff3cd;
+        border-color: #ffc107;
+        color: #856404;
+    }
+
+    .status-badge-large.in-progress {
+        background: #d1ecf1;
+        border-color: #0dcaf0;
+        color: #0c5460;
+    }
+
+    .status-badge-large.completed {
+        background: #d4edda;
+        border-color: #28a745;
+        color: #155724;
+    }
+
+    .status-badge-large.canceled {
+        background: #f8d7da;
+        border-color: #dc3545;
+        color: #721c24;
     }
 
     .tracking-step-horizontal p {
@@ -193,6 +226,38 @@
             transform: translateY(-2px);
         }
 
+    .refresh-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .refresh-indicator.show {
+            display: flex;
+        }
+
+        .refresh-indicator .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
 </style>
 
 <div class="confirmation-container">
@@ -205,7 +270,7 @@
         <p class="text-muted">Thank you for your order</p>
         <div class="order-number">@Model.OrderNumber</div>
         <p class="text-muted">
-            <i class="bi bi-clock"></i> Order placed on @Model.OrderDate.ToString("MMMM dd, yyyy hh:mm tt")
+            <i class="bi bi-clock"></i> Order placed on @Model.OrderDate.ToLocalTime().ToString("MMMM dd, yyyy h:mm tt")
         </p>
     </div>
 
@@ -215,27 +280,80 @@
         <div class="col-md-6">
             <div class="order-details">
                 <h3 class="section-title">Order Details</h3>
-                @foreach (var item in Model.Items)
+                
+                <!-- Order Type Badge -->
+                <div class="mb-3">
+                    <span class="badge bg-primary p-2 px-3" style="font-size: 0.9rem;">
+                        <i class="bi bi-@(Model.OrderType == "Unlimited" ? "infinity" : "menu-button-wide")"></i> 
+                        @(Model.OrderType == "Unlimited" ? "Unlimited Experience" : "Ala Carte")
+                    </span>
+                </div>
+
+                <!-- Order Items -->
+                @if (Model.Items != null && Model.Items.Any())
                 {
-                    <div class="order-item">
-                        <div>
-                            <strong>@item.ItemName</strong>
-                            <span style="color: #666;"> x @item.Quantity</span>
+                    @foreach (var item in Model.Items)
+                    {
+                        <div class="order-item">
+                            <div>
+                                <strong>@item.ItemName</strong>
+                                <span style="color: #666;"> x @item.Quantity</span>
+                                @if (Model.OrderType == "Unlimited")
+                                {
+                                    <br /><small style="color: #999; font-size: 0.85em;">Unlimited Menu Item</small>
+                                }
+                            </div>
+                            <div>
+                                @if (Model.OrderType == "Unlimited")
+                                {
+                                    <span style="color: #666; text-decoration: line-through;">₱@((item.Price * item.Quantity).ToString("0.00"))</span>
+                                    <br /><span style="color: #28a745; font-weight: bold;">Included</span>
+                                }
+                                else
+                                {
+                                    <span>₱@((item.Price * item.Quantity).ToString("0.00"))</span>
+                                }
+                            </div>
                         </div>
-                        <div>₱@((item.Price * item.Quantity).ToString("0.00"))</div>
-                    </div>
+                    }
                 }
-                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #dee2e6;">
-                    <div class="d-flex justify-content-between"><span>Subtotal:</span><span>₱@Model.Subtotal.ToString("0.00")</span></div>
-                    <div class="d-flex justify-content-between"><span>Tax (12%):</span><span>₱@Model.Tax.ToString("0.00")</span></div>
+                else
+                {
+                    <p class="text-muted">No items in this order.</p>
+                }
+
+                <!-- Order Summary -->
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #dee2e6;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="font-weight: 500;">Subtotal:</span>
+                        <span style="font-weight: 500;">₱@Model.Subtotal.ToString("N2")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span style="font-weight: 500;">Tax (12%):</span>
+                        <span style="font-weight: 500;">₱@Model.Tax.ToString("N2")</span>
+                    </div>
                 </div>
                 <div class="order-total-row">
-                    <span>Total:</span>
-                    <span>₱@Model.Total.ToString("0.00")</span>
+                    <span>Total Amount:</span>
+                    <span>₱@Model.Total.ToString("N2")</span>
                 </div>
+                
+                <!-- Order Status Badge -->
                 <div class="mt-3">
-                    <span class="badge bg-warning text-dark p-2 px-3">
-                        <i class="bi bi-hourglass-split"></i> Status: @Model.Status
+                    @{
+                        var statusClass = Model.Status.ToLower().Replace(" ", "-");
+                        var badgeClass = statusClass switch
+                        {
+                            "pending" => "bg-warning text-dark",
+                            "in-progress" => "bg-info text-white",
+                            "completed" => "bg-success text-white",
+                            "canceled" => "bg-danger text-white",
+                            _ => "bg-secondary text-white"
+                        };
+                    }
+                    <span class="badge @badgeClass p-2 px-3" style="font-size: 0.95rem;">
+                        <i class="bi bi-@(statusClass == "pending" ? "hourglass-split" : statusClass == "in-progress" ? "arrow-repeat" : statusClass == "completed" ? "check-circle" : "x-circle")"></i> 
+                        <strong>Status: @Model.Status</strong>
                     </span>
                 </div>
             </div>
@@ -245,25 +363,22 @@
         <div class="col-md-6">
             <h3 class="section-title">Order Status</h3>
             <div class="tracking-horizontal">
-                <div class="tracking-step-horizontal" data-step="0">
-                    <div class="tracking-icon-horizontal"><i class="bi bi-receipt"></i></div>
-                    <p>Received</p>
+                <div class="tracking-step-horizontal" data-step="pending">
+                    <div class="tracking-icon-horizontal"><i class="bi bi-hourglass-split"></i></div>
+                    <p>Pending</p>
                 </div>
-                <div class="tracking-step-horizontal" data-step="1">
-                    <div class="tracking-icon-horizontal"><i class="bi bi-basket"></i></div>
-                    <p>Preparing</p>
-                </div>
-                <div class="tracking-step-horizontal" data-step="2">
+                <div class="tracking-step-horizontal" data-step="in-progress">
                     <div class="tracking-icon-horizontal"><i class="bi bi-fire"></i></div>
-                    <p>Cooking</p>
+                    <p>In Progress</p>
                 </div>
-                <div class="tracking-step-horizontal" data-step="3">
-                    <div class="tracking-icon-horizontal"><i class="bi bi-check2-square"></i></div>
-                    <p>Quality</p>
+                <div class="tracking-step-horizontal" data-step="completed">
+                    <div class="tracking-icon-horizontal"><i class="bi bi-check-circle"></i></div>
+                    <p>Completed</p>
                 </div>
-                <div class="tracking-step-horizontal" data-step="4">
-                    <div class="tracking-icon-horizontal"><i class="bi bi-bag-check"></i></div>
-                    <p>Ready</p>
+            </div>
+            <div class="mt-4 text-center">
+                <div id="statusBadge" class="status-badge-large">
+                    <i class="bi bi-info-circle"></i> Current Status: <strong>@Model.Status</strong>
                 </div>
             </div>
         </div>
@@ -279,18 +394,108 @@
         </a>
     </div>
 
-    <p class="text-center text-muted mt-4" style="font-size: 0.9rem;">
-        Please keep this order number for reference
-    </p>
+    <div class="text-center mt-4">
+        <p class="text-muted" style="font-size: 0.9rem; margin-bottom: 10px;">
+            <i class="bi bi-info-circle"></i> <strong>Save your order number:</strong> <span style="font-size: 1.2rem; color: #ff6b35; font-weight: bold;">@Model.OrderNumber</span>
+        </p>
+        <p class="text-muted" style="font-size: 0.85rem;">
+            Lost this page? Go to the homepage and enter your order number to track your order status anytime.
+        </p>
+        <a asp-action="Index" asp-controller="Kiosk" asp-area="Customer" style="color: #ff6b35; text-decoration: underline; font-size: 0.9rem;">
+            <i class="bi bi-arrow-left"></i> Back to Home / Track Another Order
+        </a>
+    </div>
+</div>
+
+<div class="refresh-indicator" id="refreshIndicator">
+    <div class="spinner"></div>
+    <span>Checking status...</span>
 </div>
 
 <script>
-    // Highlight current step dynamically
-    const statusMap = { "Received":0, "Preparing":1, "Cooking":2, "Quality Check":3, "Ready":4 };
-    const currentStep = statusMap["@Model.Status"] || 0;
-    document.querySelectorAll('.tracking-step-horizontal').forEach((step,index)=>{
-        if(index < currentStep) step.classList.add('completed');
-        else if(index===currentStep) step.classList.add('in-progress');
-        else step.classList.add('pending');
+    // Highlight current step based on actual order status
+    const orderStatus = "@Model.Status".toLowerCase().replace(" ", "-");
+    const statusSteps = ["pending", "in-progress", "completed"];
+    const currentStepIndex = statusSteps.indexOf(orderStatus);
+    
+    document.querySelectorAll('.tracking-step-horizontal').forEach((step, index) => {
+        const stepStatus = step.getAttribute('data-step');
+        if (index < currentStepIndex) {
+            step.classList.add('completed');
+        } else if (index === currentStepIndex) {
+            step.classList.add('in-progress');
+        } else {
+            step.classList.add('pending');
+        }
     });
+
+    // Update status badge
+    const statusBadge = document.getElementById('statusBadge');
+    if (statusBadge) {
+        statusBadge.className = 'status-badge-large ' + orderStatus;
+    }
+
+    // Auto-refresh status every 5 seconds
+    let refreshInterval;
+    const indicator = document.getElementById('refreshIndicator');
+    
+    function checkOrderStatus() {
+        if (document.hidden) {
+            return; // Don't check if page is hidden
+        }
+
+        // Show indicator
+        if (indicator) {
+            indicator.classList.add('show');
+        }
+
+        fetch('/Customer/Kiosk/GetOrderStatus?orderNumber=@Model.OrderNumber')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide indicator
+                if (indicator) {
+                    indicator.classList.remove('show');
+                }
+
+                if (data.status && data.status !== '@Model.Status') {
+                    // Status changed, reload page to show updated status
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.log('Status check failed:', error);
+                // Hide indicator on error
+                if (indicator) {
+                    indicator.classList.remove('show');
+                }
+            });
+    }
+
+    // Start checking status
+    refreshInterval = setInterval(checkOrderStatus, 5000);
+
+    // Clear interval when page is hidden, restart when visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        } else {
+            // Restart interval when page becomes visible
+            if (!refreshInterval) {
+                refreshInterval = setInterval(checkOrderStatus, 5000);
+                // Check immediately when page becomes visible
+                checkOrderStatus();
+            }
+        }
+    });
+
+    // Initial check after page loads
+    setTimeout(checkOrderStatus, 2000);
 </script>

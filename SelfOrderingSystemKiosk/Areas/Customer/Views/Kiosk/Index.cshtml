@@ -4,6 +4,7 @@
 }
 
 <link rel="stylesheet" href="~/css/kiosk.css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
 
 
@@ -12,6 +13,42 @@
     <h1>Welcome to Kapitak PakPak</h1>
     <h2>How would you like to enjoy your wings?</h2>
     <p>Choose your dining preference below</p>
+
+    <!-- Error Message Display -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div style="max-width: 600px; margin: 20px auto; padding: 15px; background: #f8d7da; border: 2px solid #dc3545; border-radius: 10px; color: #721c24; text-align: center;">
+            <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.5rem; margin-right: 10px;"></i>
+            <strong>@TempData["ErrorMessage"]</strong>
+        </div>
+    }
+
+    <!-- Order Lookup Section -->
+    <div style="text-align: center; margin: 30px 0; padding: 20px; background: rgba(255, 255, 255, 0.1); border-radius: 15px;">
+        <p style="margin-bottom: 15px; font-size: 1.1rem; color: #333;">
+            <i class="bi bi-search" style="margin-right: 8px;"></i>
+            <strong>Already placed an order?</strong>
+        </p>
+        <form method="get" asp-action="LookupOrder" style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; max-width: 500px; margin: 0 auto;">
+            <input type="text" 
+                   name="orderNumber" 
+                   placeholder="Enter your order number" 
+                   required 
+                   pattern="[0-9]{4}" 
+                   maxlength="4"
+                   style="padding: 12px 20px; border: 2px solid #ff6b35; border-radius: 25px; font-size: 1.1rem; width: 250px; text-align: center;"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+            <button type="submit" 
+                    style="padding: 12px 30px; background: #ff6b35; color: white; border: none; border-radius: 25px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.3s;"
+                    onmouseover="this.style.background='#e55a2b'; this.style.transform='scale(1.05)'"
+                    onmouseout="this.style.background='#ff6b35'; this.style.transform='scale(1)'">
+                <i class="bi bi-arrow-right-circle"></i> Track Order
+            </button>
+        </form>
+        <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+            Lost your order? Enter your 4-digit order number to view your order status
+        </p>
+    </div>
 
     <div class="choices">
         <!-- Dine In -->

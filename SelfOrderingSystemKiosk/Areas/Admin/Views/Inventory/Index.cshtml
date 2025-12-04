@@ -5,9 +5,20 @@
 }
 
 <div class="content fade-in">
-    <div class="header">
-        <h1>📦 Inventory Management</h1>
-        <p>Monitor and manage your stock efficiently.</p>
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>📦 Inventory Management</h1>
+            <p>Monitor and manage your stock efficiently. Showing data from MongoDB Stock collection.</p>
+            @if (ViewBag.ItemCount != null)
+            {
+                <p style="color: #666; font-size: 0.9em;">Total items in Stock: <strong>@ViewBag.ItemCount</strong></p>
+            }
+        </div>
+        <div>
+            <a asp-area="Admin" asp-controller="Menu" asp-action="Index" class="btn btn-add" style="text-decoration: none; display: inline-block; padding: 12px 25px; font-size: 1rem;">
+                <i class="bi bi-arrow-left"></i> Back to Menu Management
+            </a>
+        </div>
     </div>
 
     <!-- Add Form -->

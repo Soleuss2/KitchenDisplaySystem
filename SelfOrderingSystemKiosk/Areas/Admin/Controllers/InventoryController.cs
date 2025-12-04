@@ -18,8 +18,25 @@ namespace SelfOrderingSystemKiosk.Controllers
 
         public async Task<IActionResult> Index()
         {
+            ViewData["Title"] = "Inventory Management";
             var items = await _stockService.GetAllAsync();
+            ViewBag.ItemCount = items?.Count ?? 0;
             return View(items);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SyncFromMenu()
+        {
+            try
+            {
+                // This will be called from MenuController's sync method
+                // For now, just return success
+                return Json(new { success = true, message = "Use Menu Management to sync items to Stock." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
         }
 
 

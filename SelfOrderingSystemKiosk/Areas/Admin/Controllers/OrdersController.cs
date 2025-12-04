@@ -1,35 +1,56 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SelfOrderingSystemKiosk.Models;
+using SelfOrderingSystemKiosk.Services;
+using SelfOrderingSystemKiosk.Areas.Customer.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SelfOrderingSystemKiosk.Controllers
 {
     [Area("Admin")]
     public class OrdersController : Controller
     {
-        // Temp data, remove cust name
-        private static List<Order> _orders = new List<Order>
-        {
-            new Order { Id = 1, Customer = "John Doe", Items = "Burger, Fries", Total = 180, DateTime = DateTime.Now.AddHours(-2), Status = "Pending" },
-            new Order { Id = 2, Customer = "Jane Smith", Items = "Iced Coffee", Total = 80, DateTime = DateTime.Now.AddHours(-1), Status = "Completed" },
-            new Order { Id = 3, Customer = "Mark Cruz", Items = "Burger, Soda", Total = 150, DateTime = DateTime.Now, Status = "Pending" }
-        };
+        private readonly OrderService _orderService;
 
-        public IActionResult Index()
+        public OrdersController(OrderService orderService)
         {
-            return View(_orders);
+            _orderService = orderService;
+        }
+
+        public async Task<IActionResult> Index(string filter = null)
+        {
+            ViewData["Title"] = "Orders Management";
+            
+            List<Order> orders;
+
+            // Apply date filter if specified
+            if (filter == "today")
+            {
+                var todayStart = DateTime.UtcNow.Date;
+                var todayEnd = todayStart.AddDays(1).AddTicks(-1);
+                var todayOrders = await _orderService.GetByDateRangeAsync(todayStart, todayEnd);
+                orders = todayOrders ?? new List<Order>();
+                ViewBag.FilterMessage = "Showing today's orders";
+            }
+            else
+            {
+                var allOrders = await _orderService.GetAllAsync();
+                orders = allOrders ?? new List<Order>();
+            }
+
+            return View(orders);
         }
 
         [HttpPost]
-        public IActionResult UpdateStatus(int id, string status)
+        public async Task<IActionResult> UpdateStatus(string id, string status)
         {
-            var order = _orders.FirstOrDefault(o => o.Id == id);
+            var order = await _orderService.GetByIdAsync(id);
             if (order != null)
             {
                 order.Status = status;
-                TempData["Message"] = $"Order #{id} status updated to '{status}'.";
+                await _orderService.UpdateAsync(id, order);
+                TempData["Message"] = $"Order #{order.OrderNumber} status updated to '{status}'.";
             }
             return RedirectToAction("Index");
         }

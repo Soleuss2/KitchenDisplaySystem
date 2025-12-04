@@ -76,6 +76,10 @@ function getQuantityLimit() {
 
 // 🪟 Show person modal on page load
 window.onload = function () {
+    // Initialize summary display after a short delay to ensure DOM is ready
+    setTimeout(() => {
+        updateOrderSummary();
+    }, 50);
     openModal("personModal");
 };
 
@@ -93,8 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
             personCount = parseInt(input);
             document.querySelector(".person-count").textContent =
                 `${personCount} Person${personCount > 1 ? "s" : ""}`;
-            document.querySelector(".order-total").textContent =
-                `TOTAL: ₱${(personCount * pricePerHead).toFixed(2)}`;
+            
+            // Update order summary with a small delay to ensure DOM is ready
+            setTimeout(() => {
+                updateOrderSummary();
+            }, 100);
 
             closeModal("personModal");
             showRulesModal();
@@ -174,6 +181,46 @@ function showRulesModal() {
 
     rulesBody.innerHTML = message;
     openModal("rulesModal");
+}
+
+// 💰 Update order summary breakdown
+function updateOrderSummary() {
+    const personCountDisplay = document.getElementById('person-count-display');
+    const perPersonSubtotalEl = document.getElementById('per-person-subtotal');
+    const subtotalAmountEl = document.getElementById('subtotal-amount');
+    const taxAmountEl = document.getElementById('tax-amount');
+    const orderTotalEl = document.querySelector('.order-total');
+    
+    // Check if elements exist (for Unlimited menu only)
+    if (!personCountDisplay || !perPersonSubtotalEl || !subtotalAmountEl || !taxAmountEl || !orderTotalEl) {
+        return; // Not on Unlimited menu page
+    }
+    
+    // Always use the current personCount value
+    const currentPersonCount = personCount || 0;
+    
+    if (currentPersonCount === 0) {
+        personCountDisplay.textContent = '0';
+        perPersonSubtotalEl.textContent = '₱0.00';
+        subtotalAmountEl.innerHTML = '<strong>₱0.00</strong>';
+        taxAmountEl.textContent = '₱0.00';
+        orderTotalEl.innerHTML = '<strong>₱0.00</strong>';
+        return;
+    }
+
+    const perPersonSubtotal = currentPersonCount * pricePerHead;
+    const tax = perPersonSubtotal * 0.12;
+    const total = perPersonSubtotal + tax;
+
+    // Update all elements - ensure we're setting the text content correctly
+    if (personCountDisplay) personCountDisplay.textContent = String(currentPersonCount);
+    if (perPersonSubtotalEl) perPersonSubtotalEl.textContent = `₱${perPersonSubtotal.toFixed(2)}`;
+    if (subtotalAmountEl) subtotalAmountEl.innerHTML = `<strong>₱${perPersonSubtotal.toFixed(2)}</strong>`;
+    if (taxAmountEl) taxAmountEl.textContent = `₱${tax.toFixed(2)}`;
+    if (orderTotalEl) {
+        // Only update the amount, not the "TOTAL:" text
+        orderTotalEl.innerHTML = `<strong>₱${total.toFixed(2)}</strong>`;
+    }
 }
 
 // 🛒 Update cart display

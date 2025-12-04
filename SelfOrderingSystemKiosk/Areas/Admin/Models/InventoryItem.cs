@@ -29,5 +29,11 @@ namespace SelfOrderingSystemKiosk.Models
 
         [BsonElement("Status")]
         public string Status { get; set; }
+
+        [BsonElement("Availability")]
+        public string Availability { get; set; } = "Available";
+
+        [BsonElement("Image")]
+        public string Image { get; set; } = "/images/wings.png";
     }
 }

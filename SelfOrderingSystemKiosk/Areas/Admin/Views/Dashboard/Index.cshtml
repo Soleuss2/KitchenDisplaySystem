@@ -2,12 +2,130 @@
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
     var labelsJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Labels);
     var valuesJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Values);
+    var todayRevenue = ViewBag.TodaysRevenue != null ? (decimal)ViewBag.TodaysRevenue : 0m;
 }
 
 <div class="dashboard-container">
     <h1>Admin Dashboard</h1>
     <p>Overview of key statistics</p>
 
+    <!-- Stat Cards -->
+    <div class="dashboard-cards">
+        <div class="stat-card">
+            <h3>Menu Items</h3>
+            <div class="stat-value">@ViewBag.TotalMenuItems</div>
+        </div>
+        <div class="stat-card">
+            <h3>Inventory Items</h3>
+            <div class="stat-value">@ViewBag.TotalInventoryItems</div>
+        </div>
+        <div class="stat-card highlight-card">
+            <h3>Low Stock Items</h3>
+            <div class="stat-value">@ViewBag.LowStockItems</div>
+        </div>
+        <div class="stat-card">
+            <h3>Today's Sales</h3>
+            <div class="stat-value">@ViewBag.TodaysSales</div>
+            <div class="stat-revenue" style="color: #27ae60; font-size: 0.9em; margin-top: 5px; font-weight: 600;">
+                Revenue: ₱@todayRevenue.ToString("N2")
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Summary with Filters -->
+    <div class="sales-summary-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 20px;">
+            <h2 style="color: #e67e22; margin: 0;">📊 Sales Summary</h2>
+            <div class="sales-filter-buttons">
+                <button class="sales-filter-btn active" data-filter="day" onclick="filterSales('day')">Day</button>
+                <button class="sales-filter-btn" data-filter="month" onclick="filterSales('month')">Month</button>
+                <button class="sales-filter-btn" data-filter="year" onclick="filterSales('year')">Year</button>
+                <button class="sales-filter-btn" data-filter="today" onclick="filterSales('today')">Today's Sales</button>
+            </div>
+        </div>
+        
+        <!-- Daily Sales Summary -->
+        <div id="daily-sales" class="sales-summary-container" style="display: none;">
+            @if (ViewBag.DailySales != null && ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.DailySales).Any())
+            {
+                @foreach (var dayData in ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.DailySales).OrderByDescending(x => x.Key))
+                {
+                    var date = DateTime.Parse(dayData.Key);
+                    <div class="sales-card">
+                        <h3>@date.ToString("MMM dd, yyyy")</h3>
+                        <div class="sales-stat">
+                            <span class="sales-label">Orders:</span>
+                            <span class="sales-value">@dayData.Value.Count</span>
+                        </div>
+                        <div class="sales-stat">
+                            <span class="sales-label">Revenue:</span>
+                            <span class="sales-value revenue">₱@dayData.Value.Revenue.ToString("N2")</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Monthly Sales Summary -->
+        <div id="monthly-sales" class="sales-summary-container" style="display: none;">
+            @if (ViewBag.MonthlySales != null && ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.MonthlySales).Any())
+            {
+                @foreach (var monthData in ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.MonthlySales).OrderByDescending(x => x.Key))
+                {
+                    var date = DateTime.Parse(monthData.Key + "-01");
+                    <div class="sales-card">
+                        <h3>@date.ToString("MMMM yyyy")</h3>
+                        <div class="sales-stat">
+                            <span class="sales-label">Orders:</span>
+                            <span class="sales-value">@monthData.Value.Count</span>
+                        </div>
+                        <div class="sales-stat">
+                            <span class="sales-label">Revenue:</span>
+                            <span class="sales-value revenue">₱@monthData.Value.Revenue.ToString("N2")</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Yearly Sales Summary -->
+        <div id="yearly-sales" class="sales-summary-container" style="display: block;">
+            @if (ViewBag.YearlySales != null && ((Dictionary<int, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.YearlySales).Any())
+            {
+                @foreach (var yearData in ((Dictionary<int, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.YearlySales).OrderByDescending(x => x.Key))
+                {
+                    <div class="sales-card">
+                        <h3>@yearData.Key</h3>
+                        <div class="sales-stat">
+                            <span class="sales-label">Orders:</span>
+                            <span class="sales-value">@yearData.Value.Count</span>
+                        </div>
+                        <div class="sales-stat">
+                            <span class="sales-label">Revenue:</span>
+                            <span class="sales-value revenue">₱@yearData.Value.Revenue.ToString("N2")</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Today's Sales Detail -->
+        <div id="today-sales" class="sales-summary-container" style="display: none;">
+            <div class="sales-card highlight-card">
+                <h3>Today (@DateTime.UtcNow.ToLocalTime().ToString("MMM dd, yyyy"))</h3>
+                <div class="sales-stat">
+                    <span class="sales-label">Orders:</span>
+                    <span class="sales-value">@ViewBag.TodaysSales</span>
+                </div>
+                <div class="sales-stat">
+                    <span class="sales-label">Revenue:</span>
+                    <span class="sales-value revenue" style="font-size: 1.3em;">₱@todayRevenue.ToString("N2")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
     <div class="chart-container">
         <canvas id="statsChart"></canvas>
     </div>
@@ -69,5 +187,32 @@
                 }
             }
         });
+
+        function filterSales(filterType) {
+            // Hide all sales containers
+            document.getElementById('daily-sales').style.display = 'none';
+            document.getElementById('monthly-sales').style.display = 'none';
+            document.getElementById('yearly-sales').style.display = 'none';
+            document.getElementById('today-sales').style.display = 'none';
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.sales-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected container and activate button
+            if (filterType === 'day') {
+                document.getElementById('daily-sales').style.display = 'grid';
+            } else if (filterType === 'month') {
+                document.getElementById('monthly-sales').style.display = 'grid';
+            } else if (filterType === 'year') {
+                document.getElementById('yearly-sales').style.display = 'grid';
+            } else if (filterType === 'today') {
+                document.getElementById('today-sales').style.display = 'grid';
+            }
+
+            // Add active class to clicked button
+            document.querySelector(`[data-filter="${filterType}"]`).classList.add('active');
+        }
     </script>
 }

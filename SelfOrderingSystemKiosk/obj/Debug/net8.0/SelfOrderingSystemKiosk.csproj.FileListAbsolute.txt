@@ -150,7 +150,6 @@ E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\staticwebassets.b
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\staticwebassets.build.json.cache
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\staticwebassets.development.json
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\SelfOrde.0AEF4178.Up2Date
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\SelfOrderingSystemKiosk.dll
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\refint\SelfOrderingSystemKiosk.dll

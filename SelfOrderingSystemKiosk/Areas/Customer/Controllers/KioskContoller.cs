@@ -10,12 +10,12 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
     public class KioskController : Controller
     {
         private readonly OrderService _orderService;
-        private readonly ChickenService _chickenService;
+        private readonly StockService _stockService;
 
-        public KioskController(OrderService orderService, ChickenService chickenService)
+        public KioskController(OrderService orderService, StockService stockService)
         {
             _orderService = orderService;
-            _chickenService = chickenService;
+            _stockService = stockService;
         }
 
         public IActionResult Index() => View();
@@ -54,49 +54,82 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         {
             TempData.Keep("ExperienceType"); // Keep it for the next request
             ViewBag.ExperienceType = "AlaCarte";
-            var flavors = await _chickenService.GetAllAsync() ?? new List<ChickenFlavors>();
-            return View(flavors);
+            // Only show available items from Stock collection
+            var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
+            return View(items);
         }
 
         public async Task<IActionResult> UnlimitedMenu()
         {
             TempData.Keep("ExperienceType"); // Keep it for the next request
             ViewBag.ExperienceType = "Unlimited";
-            var flavors = await _chickenService.GetAllAsync() ?? new List<ChickenFlavors>();
-            return View(flavors);
+            // Only show available items from Stock collection
+            var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
+            return View(items);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ConfirmOrder([FromBody] List<OrderItem> Items, [FromQuery] string orderType)
+        [IgnoreAntiforgeryToken] // Allow API calls without CSRF token
+        public async Task<IActionResult> ConfirmOrder([FromBody] List<OrderItem> Items, [FromQuery] string orderType, [FromQuery] int? personCount)
         {
-            if (Items == null || !Items.Any())
-                return Json(new { success = false, message = "No items in the order" });
-
-            // Get orderType from TempData if not in query string
-            string experienceType = orderType ?? TempData["ExperienceType"]?.ToString() ?? "AlaCarte";
-
-            decimal subtotal = Items.Sum(i => i.Price * i.Quantity);
-            decimal tax = subtotal * 0.12m;
-            decimal total = subtotal + tax;
-
-            var random = new Random();
-            string orderNumber = random.Next(1000, 9999).ToString();
-
-            var order = new Order
+            try
             {
-                OrderNumber = orderNumber,
-                OrderDate = DateTime.Now,
-                Status = "Pending",
-                OrderType = experienceType, // ✅ Store the order type
-                Subtotal = subtotal,
-                Tax = tax,
-                Total = total,
-                Items = Items
-            };
+                // Log incoming request for debugging
+                Console.WriteLine($"ConfirmOrder called - orderType: {orderType}, personCount: {personCount}");
+                Console.WriteLine($"Items count: {Items?.Count ?? 0}");
+                
+                if (Items == null || !Items.Any())
+                    return Json(new { success = false, message = "No items in the order" });
 
-            await _orderService.CreateAsync(order);
+                // Get orderType from TempData if not in query string
+                string experienceType = orderType ?? TempData["ExperienceType"]?.ToString() ?? "AlaCarte";
 
-            return Json(new { success = true, orderNumber = order.OrderNumber });
+                decimal subtotal;
+                decimal tax;
+                decimal total;
+
+                // For Unlimited orders, calculate based on personCount * pricePerHead
+                if (experienceType == "Unlimited" && personCount.HasValue && personCount.Value > 0)
+                {
+                    const decimal pricePerHead = 377m;
+                    subtotal = personCount.Value * pricePerHead;
+                    tax = subtotal * 0.12m;
+                    total = subtotal + tax;
+                }
+                else
+                {
+                    // For Ala Carte orders, calculate based on item prices
+                    subtotal = Items.Sum(i => i.Price * i.Quantity);
+                    tax = subtotal * 0.12m;
+                    total = subtotal + tax;
+                }
+
+                var random = new Random();
+                string orderNumber = random.Next(1000, 9999).ToString();
+
+                var order = new Order
+                {
+                    OrderNumber = orderNumber,
+                    OrderDate = DateTime.UtcNow,
+                    Status = "Pending",
+                    OrderType = experienceType, // ✅ Store the order type
+                    Subtotal = subtotal,
+                    Tax = tax,
+                    Total = total,
+                    Items = Items
+                };
+
+                await _orderService.CreateAsync(order);
+
+                return Json(new { success = true, orderNumber = order.OrderNumber });
+            }
+            catch (Exception ex)
+            {
+                // Log the error for debugging
+                Console.WriteLine($"Error creating order: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return Json(new { success = false, message = $"Error creating order: {ex.Message}" });
+            }
         }
 
         [HttpGet]
@@ -110,6 +143,39 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                 return RedirectToAction("Index");
 
             return View(order);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetOrderStatus(string orderNumber)
+        {
+            if (string.IsNullOrEmpty(orderNumber))
+                return Json(new { status = "" });
+
+            var order = await _orderService.GetByOrderNumberAsync(orderNumber);
+            if (order == null)
+                return Json(new { status = "" });
+
+            return Json(new { status = order.Status });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> LookupOrder(string orderNumber)
+        {
+            if (string.IsNullOrEmpty(orderNumber))
+            {
+                TempData["ErrorMessage"] = "Please enter an order number";
+                return RedirectToAction("Index");
+            }
+
+            var order = await _orderService.GetByOrderNumberAsync(orderNumber);
+            if (order == null)
+            {
+                TempData["ErrorMessage"] = $"Order #{orderNumber} not found. Please check your order number and try again.";
+                return RedirectToAction("Index");
+            }
+
+            // Order found, redirect to confirmation page
+            return RedirectToAction("Confirmation", new { orderNumber = orderNumber });
         }
     }
 }
