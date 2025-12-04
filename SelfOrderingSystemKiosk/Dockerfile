@@ -1,18 +1,16 @@
 # Dockerfile for .NET 8.0 Application
 # This Dockerfile fixes the "dotnet: command not found" error on Render
+# Use with Root Directory: SelfOrderingSystemKiosk, Dockerfile Path: Dockerfile
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy csproj file and restore dependencies
-# If Dockerfile is at SelfOrderingSystemKiosk/Dockerfile, the build context is repo root
-# So we need to copy from SelfOrderingSystemKiosk/ folder
-COPY SelfOrderingSystemKiosk/*.csproj ./SelfOrderingSystemKiosk/
-WORKDIR /src/SelfOrderingSystemKiosk
+COPY *.csproj ./
 RUN dotnet restore
 
 # Copy everything else and build
-COPY SelfOrderingSystemKiosk/ ./
+COPY . ./
 RUN dotnet publish -c Release -o /app/publish
 
 # Build runtime image
