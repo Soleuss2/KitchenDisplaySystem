@@ -156,3 +156,4 @@ E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\refint\SelfOrderi
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\SelfOrderingSystemKiosk.pdb
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\SelfOrderingSystemKiosk.genruntimeconfig.cache
 E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\obj\Debug\net8.0\ref\SelfOrderingSystemKiosk.dll
+E:\KItchenSystemKiosk\SelfOrderingSystemKiosk\bin\Debug\net8.0\appsettings.Development.json

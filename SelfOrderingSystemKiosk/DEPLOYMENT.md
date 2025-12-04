@@ -1,5 +1,29 @@
 # Deployment Guide - Connection String Configuration
 
+## ⚠️ Important: Netlify Limitation
+
+**Netlify is NOT recommended for .NET Core MVC applications** because:
+- Netlify is designed for static sites and serverless functions (Node.js, Go, Python)
+- .NET Core requires a full server runtime that Netlify doesn't support
+- Your application needs continuous server-side processing (MongoDB connections, sessions, etc.)
+
+### Better Alternatives for .NET Core:
+- **Azure App Service** (Recommended - best .NET support)
+- **AWS Elastic Beanstalk** or **AWS App Runner**
+- **Railway** (Easy deployment, good .NET support)
+- **Render** (Simple deployment, supports .NET)
+- **Fly.io** (Good for .NET applications)
+- **DigitalOcean App Platform**
+- **Heroku** (though being phased out)
+
+### If You Must Use Netlify:
+You would need to:
+1. Separate frontend (static HTML/JS) and deploy to Netlify
+2. Deploy backend API to a .NET-compatible platform
+3. Use Netlify Functions for serverless endpoints (but limited .NET support)
+
+This requires significant architecture changes and is not recommended.
+
 ## Overview
 This application uses environment variables for secure connection string management in production. The connection string should **never** be hardcoded in `appsettings.json` or committed to source control.
 

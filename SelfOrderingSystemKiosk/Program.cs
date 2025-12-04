@@ -106,5 +106,11 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{area=Admin}/{controller=Dashboard}/{action=Index}/{id?}");
 
+// Use PORT environment variable for Render/cloud deployments
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    app.Urls.Add($"http://0.0.0.0:{port}");
+}
 
 app.Run();

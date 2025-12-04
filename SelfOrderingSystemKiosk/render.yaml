@@ -1,0 +1,18 @@
+# Render Configuration File
+# This file helps Render auto-configure your service
+# Place this in the root of your repository
+
+services:
+  - type: web
+    name: kitchen-system-kiosk
+    env: dotnet
+    buildCommand: dotnet restore && dotnet publish -c Release -o ./publish
+    startCommand: dotnet ./publish/SelfOrderingSystemKiosk.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DataCon__ConnectionString
+        sync: false  # Set this manually in Render dashboard for security
+    # Uncomment and set if your project is in a subdirectory
+    # rootDir: SelfOrderingSystemKiosk
+
