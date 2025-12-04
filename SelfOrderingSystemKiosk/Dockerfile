@@ -5,11 +5,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy csproj file and restore dependencies
-COPY SelfOrderingSystemKiosk.csproj ./
+# If Dockerfile is at SelfOrderingSystemKiosk/Dockerfile, the build context is repo root
+# So we need to copy from SelfOrderingSystemKiosk/ folder
+COPY SelfOrderingSystemKiosk/*.csproj ./SelfOrderingSystemKiosk/
+WORKDIR /src/SelfOrderingSystemKiosk
 RUN dotnet restore
 
 # Copy everything else and build
-COPY . ./
+COPY SelfOrderingSystemKiosk/ ./
 RUN dotnet publish -c Release -o /app/publish
 
 # Build runtime image
