@@ -51,7 +51,8 @@ namespace SelfOrderingSystemKiosk.Controllers
                 Unit = unit,
                 ReorderLevel = reorderLevel,
                 Price = price,
-                Status = stock <= reorderLevel ? "Low Stock" : "In Stock"
+                Status = stock <= reorderLevel ? "Low Stock" : "In Stock",
+                Availability = stock == 0 ? "Unavailable" : "Available"
             };
 
             await _stockService.AddAsync(newItem);
@@ -79,6 +80,7 @@ namespace SelfOrderingSystemKiosk.Controllers
         public async Task<IActionResult> Edit(InventoryItem updatedItem)
         {
             updatedItem.Status = updatedItem.CurrentStock <= updatedItem.ReorderLevel ? "Low Stock" : "In Stock";
+            // Availability will be automatically set by UpdateAsync based on stock
             await _stockService.UpdateAsync(updatedItem);
             TempData["Message"] = $"Item '{updatedItem.Item}' updated successfully!";
             return RedirectToAction("Index");

@@ -221,9 +221,31 @@
         transition: all 0.3s;
     }
 
-        .btn-secondary:hover {
-            background: #5a6268;
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 12px 35px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+        .btn-danger:hover {
+            background: #c82333;
             transform: translateY(-2px);
+        }
+
+        .btn-danger:disabled {
+            background: #6c757d;
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
     .refresh-indicator {
@@ -386,9 +408,24 @@
 
     <!-- Action Buttons -->
     <div class="action-buttons">
-        <button class="btn-secondary" onclick="window.print()">
-            <i class="bi bi-printer"></i> Print Receipt
-        </button>
+        @{
+            var canCancel = Model.Status != null && 
+                           !Model.Status.Equals("In Progress", StringComparison.OrdinalIgnoreCase) &&
+                           !Model.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) &&
+                           !Model.Status.Equals("Canceled", StringComparison.OrdinalIgnoreCase);
+        }
+        @if (canCancel)
+        {
+            <button class="btn-danger" id="cancelOrderBtn" onclick="cancelOrder('@Model.OrderNumber')">
+                <i class="bi bi-x-circle"></i> Cancel Order
+            </button>
+        }
+        else
+        {
+            <button class="btn-secondary" disabled style="opacity: 0.6; cursor: not-allowed;">
+                <i class="bi bi-x-circle"></i> Cannot Cancel
+            </button>
+        }
         <a asp-action="Index" asp-controller="Kiosk" asp-area="Customer" class="btn-primary" style="text-decoration: none;">
             <i class="bi bi-house"></i> New Order
         </a>
@@ -498,4 +535,45 @@
 
     // Initial check after page loads
     setTimeout(checkOrderStatus, 2000);
+
+    // Cancel order function
+    function cancelOrder(orderNumber) {
+        if (!confirm('Are you sure you want to cancel this order?')) {
+            return;
+        }
+
+        const cancelBtn = document.getElementById('cancelOrderBtn');
+        if (cancelBtn) {
+            cancelBtn.disabled = true;
+            cancelBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Cancelling...';
+        }
+
+        fetch('/Customer/Kiosk/CancelOrder?orderNumber=' + orderNumber, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order has been cancelled successfully.');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Failed to cancel order.'));
+                if (cancelBtn) {
+                    cancelBtn.disabled = false;
+                    cancelBtn.innerHTML = '<i class="bi bi-x-circle"></i> Cancel Order';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error cancelling order:', error);
+            alert('An error occurred while cancelling the order. Please try again.');
+            if (cancelBtn) {
+                cancelBtn.disabled = false;
+                cancelBtn.innerHTML = '<i class="bi bi-x-circle"></i> Cancel Order';
+            }
+        });
+    }
 </script>

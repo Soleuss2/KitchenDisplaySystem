@@ -42,7 +42,7 @@ namespace SelfOrderingSystemKiosk.Controllers
                     Item = name,
                     Category = category,
                     Price = price,
-                    Availability = availability,
+                    Availability = currentStock == 0 ? "Unavailable" : (availability ?? "Available"),
                     Image = defaultImage,
                     CurrentStock = currentStock,
                     Unit = unit ?? "pcs",
@@ -85,6 +85,7 @@ namespace SelfOrderingSystemKiosk.Controllers
                 }
                 
                 updated.Status = updated.CurrentStock <= updated.ReorderLevel ? "Low Stock" : "In Stock";
+                // Availability will be automatically set by UpdateAsync based on stock
                 await _stockService.UpdateAsync(updated);
             }
 

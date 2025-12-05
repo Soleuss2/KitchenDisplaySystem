@@ -64,5 +64,19 @@ namespace SelfOrderingSystemKiosk.Services
         {
             return await _orders.Find(o => o.OrderDate >= startDate && o.OrderDate <= endDate).ToListAsync();
         }
+
+        // Cancel order by ID
+        public async Task CancelOrderAsync(string id)
+        {
+            var update = Builders<Order>.Update.Set(o => o.Status, "Canceled");
+            await _orders.UpdateOneAsync(o => o.Id == id, update);
+        }
+
+        // Cancel order by order number
+        public async Task CancelOrderByOrderNumberAsync(string orderNumber)
+        {
+            var update = Builders<Order>.Update.Set(o => o.Status, "Canceled");
+            await _orders.UpdateOneAsync(o => o.OrderNumber == orderNumber, update);
+        }
     }
 }

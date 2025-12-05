@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SelfOrderingSystemKiosk.Services;
+using System;
+using System.Linq;
 
 namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
 {
@@ -8,10 +10,12 @@ namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
     public class KitchenController : Controller
     {
         private readonly OrderService _orderService;
+        private readonly StockService _stockService;
 
-        public KitchenController(OrderService orderService)
+        public KitchenController(OrderService orderService, StockService stockService)
         {
             _orderService = orderService;
+            _stockService = stockService;
         }
 
         // GET: Kitchen/Kitchen/Index
@@ -69,6 +73,38 @@ namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateStatus(string id, string status)
         {
+            // If status is being changed to "Completed", decrement stock
+            if (status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                // Get the order to access its items and current status
+                var order = await _orderService.GetByIdAsync(id);
+                
+                // Only decrement if order is not already completed (prevent double-decrementing)
+                if (order != null && 
+                    !order.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) &&
+                    order.Items != null && order.Items.Any())
+                {
+                    // Decrement stock for each item in the order
+                    foreach (var orderItem in order.Items)
+                    {
+                        if (!string.IsNullOrEmpty(orderItem.ItemName) && orderItem.Quantity > 0)
+                        {
+                            try
+                            {
+                                await _stockService.DecrementStockAsync(orderItem.ItemName, orderItem.Quantity);
+                                Console.WriteLine($"Decremented stock: {orderItem.ItemName} by {orderItem.Quantity}");
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but continue processing other items
+                                Console.WriteLine($"Error decrementing stock for {orderItem.ItemName}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Update the order status
             await _orderService.UpdateStatusAsync(id, status);
             return RedirectToAction("Index");
         }

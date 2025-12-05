@@ -177,5 +177,43 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             // Order found, redirect to confirmation page
             return RedirectToAction("Confirmation", new { orderNumber = orderNumber });
         }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken] // Allow API calls without CSRF token
+        public async Task<IActionResult> CancelOrder(string orderNumber)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(orderNumber))
+                {
+                    return Json(new { success = false, message = "Order number is required" });
+                }
+
+                var order = await _orderService.GetByOrderNumberAsync(orderNumber);
+                if (order == null)
+                {
+                    return Json(new { success = false, message = "Order not found" });
+                }
+
+                // Check if order can be cancelled (not in progress, completed, or already cancelled)
+                if (order.Status != null && 
+                    (order.Status.Equals("In Progress", StringComparison.OrdinalIgnoreCase) ||
+                     order.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) ||
+                     order.Status.Equals("Canceled", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return Json(new { success = false, message = $"Cannot cancel order. Order status is: {order.Status}" });
+                }
+
+                // Cancel the order
+                await _orderService.CancelOrderAsync(order.Id);
+
+                return Json(new { success = true, message = "Order cancelled successfully" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error cancelling order: {ex.Message}");
+                return Json(new { success = false, message = $"Error cancelling order: {ex.Message}" });
+            }
+        }
     }
 }

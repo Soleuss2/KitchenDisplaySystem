@@ -81,10 +81,6 @@
                             <td>
                                 <div class="action-buttons">
                                     <a asp-action="Edit" asp-route-id="@i.Id" class="btn btn-edit" onclick="return confirmAction('Edit this item?')">Edit</a>
-                                    <form asp-action="Delete" method="post" style="display:inline;" onsubmit="return confirmAction('Are you sure you want to delete this item?')">
-                                        <input type="hidden" name="id" value="@i.Id" />
-                                        <button type="submit" class="btn btn-delete">Delete</button>
-                                    </form>
                                 </div>
                             </td>
                         </tr>
