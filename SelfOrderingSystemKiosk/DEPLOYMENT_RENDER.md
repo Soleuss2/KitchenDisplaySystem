@@ -98,10 +98,13 @@ Click **"Add Environment Variable"** and add:
 | `DataCon__ConnectionString` | `mongodb+srv://Admin:YourPassword@cluster0.f5tgv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` |
 
-**Important Notes:**
+**⚠️ CRITICAL - Connection String Format:**
 - Use **double underscore** `__` for nested properties: `DataCon__ConnectionString`
 - Replace `YourPassword` with your actual MongoDB password
-- Keep the connection string in quotes if it contains special characters
+- **DO NOT** put quotes around the connection string value in Render
+- **DO NOT** include the quotes when pasting - just paste the connection string directly
+- Example (correct): `mongodb+srv://Admin:Password123@cluster0.f5tgv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+- Example (wrong): `"mongodb+srv://Admin:Password123@cluster0.f5tgv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"` ❌
 
 ### Additional Environment Variables (Optional):
 

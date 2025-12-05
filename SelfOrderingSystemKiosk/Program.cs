@@ -26,7 +26,13 @@ builder.Services.Configure<MongoDBSettings>(options =>
     builder.Configuration.GetSection("KitchenDatabase").Bind(options);
 
     // Connection string with DataCon's value
-    options.ConnectionString = builder.Configuration["DataCon:ConnectionString"];
+    // Trim quotes if accidentally included in environment variable
+    var connectionString = builder.Configuration["DataCon:ConnectionString"];
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        connectionString = connectionString.Trim().Trim('"').Trim('\'');
+    }
+    options.ConnectionString = connectionString;
 });
 
 builder.Services.Configure<AuthenticationSettings>(
@@ -104,7 +110,7 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{area=Admin}/{controller=Dashboard}/{action=Index}/{id?}");
+    pattern: "{area=Customer}/{controller=Kiosk}/{action=Index}/{id?}");
 
 // Use PORT environment variable for Render/cloud deployments
 var port = Environment.GetEnvironmentVariable("PORT");
