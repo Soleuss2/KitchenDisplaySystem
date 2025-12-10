@@ -3,6 +3,17 @@
     var labelsJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Labels);
     var valuesJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Values);
     var todayRevenue = ViewBag.TodaysRevenue != null ? (decimal)ViewBag.TodaysRevenue : 0m;
+    var lowStockItemsList = ViewBag.LowStockList as List<SelfOrderingSystemKiosk.Models.InventoryItem> ?? new List<SelfOrderingSystemKiosk.Models.InventoryItem>();
+    var bestSellersAll = ViewBag.BestSellersAllTime as List<SelfOrderingSystemKiosk.Controllers.BestSeller> ?? new List<SelfOrderingSystemKiosk.Controllers.BestSeller>();
+    var bestSellersToday = ViewBag.BestSellersToday as List<SelfOrderingSystemKiosk.Controllers.BestSeller> ?? new List<SelfOrderingSystemKiosk.Controllers.BestSeller>();
+    var todayRevenueAlaCarte = ViewBag.TodaysRevenueAlaCarte != null ? (decimal)ViewBag.TodaysRevenueAlaCarte : 0m;
+    var todayRevenueUnlimited = ViewBag.TodaysRevenueUnlimited != null ? (decimal)ViewBag.TodaysRevenueUnlimited : 0m;
+    var rangeStart = ViewBag.RangeStart != null ? ((DateTime)ViewBag.RangeStart).ToLocalTime() : DateTime.UtcNow.ToLocalTime().Date;
+    var rangeEnd = ViewBag.RangeEnd != null ? ((DateTime)ViewBag.RangeEnd).ToLocalTime() : DateTime.UtcNow.ToLocalTime().Date;
+    var rangeRevenue = ViewBag.RangeRevenue != null ? (decimal)ViewBag.RangeRevenue : 0m;
+    var rangeRevenueAlaCarte = ViewBag.RangeRevenueAlaCarte != null ? (decimal)ViewBag.RangeRevenueAlaCarte : 0m;
+    var rangeRevenueUnlimited = ViewBag.RangeRevenueUnlimited != null ? (decimal)ViewBag.RangeRevenueUnlimited : 0m;
+    var rangeOrderCount = ViewBag.RangeOrderCount != null ? (int)ViewBag.RangeOrderCount : 0;
 }
 
 <div class="dashboard-container">
@@ -19,7 +30,7 @@
             <h3>Inventory Items</h3>
             <div class="stat-value">@ViewBag.TotalInventoryItems</div>
         </div>
-        <div class="stat-card highlight-card">
+        <div class="stat-card highlight-card clickable-card" role="button" tabindex="0" onclick="showLowStockModal()" onkeypress="if(event.key === 'Enter' || event.key === ' ') { showLowStockModal(); }">
             <h3>Low Stock Items</h3>
             <div class="stat-value">@ViewBag.LowStockItems</div>
         </div>
@@ -27,7 +38,13 @@
             <h3>Today's Sales</h3>
             <div class="stat-value">@ViewBag.TodaysSales</div>
             <div class="stat-revenue" style="color: #27ae60; font-size: 0.9em; margin-top: 5px; font-weight: 600;">
-                Revenue: ₱@todayRevenue.ToString("N2")
+                Total Revenue: ₱@todayRevenue.ToString("N2")
+            </div>
+            <div class="stat-revenue" style="color: #e67e22; font-size: 0.85em; margin-top: 2px; font-weight: 600;">
+                Ala Carte: ₱@todayRevenueAlaCarte.ToString("N2")
+            </div>
+            <div class="stat-revenue" style="color: #9b59b6; font-size: 0.85em; margin-top: 2px; font-weight: 600;">
+                Unlimited: ₱@todayRevenueUnlimited.ToString("N2")
             </div>
         </div>
     </div>
@@ -121,6 +138,42 @@
                     <span class="sales-label">Revenue:</span>
                     <span class="sales-value revenue" style="font-size: 1.3em;">₱@todayRevenue.ToString("N2")</span>
                 </div>
+                <div class="sales-stat">
+                    <span class="sales-label">Ala Carte:</span>
+                    <span class="sales-value">₱@todayRevenueAlaCarte.ToString("N2")</span>
+                </div>
+                <div class="sales-stat">
+                    <span class="sales-label">Unlimited:</span>
+                    <span class="sales-value">₱@todayRevenueUnlimited.ToString("N2")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Time Range Filter -->
+    <div class="range-filter">
+        <form method="get" class="range-filter-form">
+            <div class="range-filter-fields">
+                <label>
+                    From
+                    <input type="date" name="startDate" value="@rangeStart.ToString("yyyy-MM-dd")" />
+                </label>
+                <label>
+                    To
+                    <input type="date" name="endDate" value="@rangeEnd.ToString("yyyy-MM-dd")" />
+                </label>
+            </div>
+            <button type="submit" class="range-filter-apply">Apply</button>
+        </form>
+        <div class="range-summary">
+            <div>
+                <div class="range-title">Revenue (@rangeStart.ToString("MMM dd, yyyy") - @rangeEnd.ToString("MMM dd, yyyy"))</div>
+                <div class="range-total">Total: ₱@rangeRevenue.ToString("N2")</div>
+            </div>
+            <div class="range-breakdown">
+                <span class="pill warning">Ala Carte: ₱@rangeRevenueAlaCarte.ToString("N2")</span>
+                <span class="pill muted">Unlimited: ₱@rangeRevenueUnlimited.ToString("N2")</span>
+                <span class="pill info">Orders: @rangeOrderCount</span>
             </div>
         </div>
     </div>
@@ -129,6 +182,89 @@
     <div class="chart-container">
         <canvas id="statsChart"></canvas>
     </div>
+
+    <!-- Best Sellers -->
+    <div class="best-sellers">
+        <div class="best-sellers-header">
+            <h2>🏆 Best Sellers</h2>
+            <div class="sales-filter-buttons best-seller-filters">
+                <button class="sales-filter-btn active" data-bs-filter="all" onclick="filterBestSellers('all')">All Time</button>
+                <button class="sales-filter-btn" data-bs-filter="today" onclick="filterBestSellers('today')">Today</button>
+            </div>
+        </div>
+        <span class="best-sellers-sub">Top 5 by quantity</span>
+
+        <div id="best-sellers-all" class="best-sellers-list" style="display: flex;">
+            @if (bestSellersAll.Any())
+            {
+                @foreach (var item in bestSellersAll)
+                {
+                    <div class="best-seller-row">
+                        <div class="best-seller-name">@item.ItemName</div>
+                        <div class="best-seller-meta">
+                            <span class="pill warning">Sold: @item.Quantity</span>
+                            <span class="pill muted">₱@item.Revenue.ToString("N2")</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="lowstock-empty">No sales yet to rank best sellers.</p>
+            }
+        </div>
+
+        <div id="best-sellers-today" class="best-sellers-list" style="display: none;">
+            @if (bestSellersToday.Any())
+            {
+                @foreach (var item in bestSellersToday)
+                {
+                    <div class="best-seller-row">
+                        <div class="best-seller-name">@item.ItemName</div>
+                        <div class="best-seller-meta">
+                            <span class="pill warning">Sold: @item.Quantity</span>
+                            <span class="pill muted">₱@item.Revenue.ToString("N2")</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="lowstock-empty">No sales today yet to rank best sellers.</p>
+            }
+        </div>
+    </div>
+
+    <!-- Low Stock Modal -->
+    <div id="lowStockModal" class="lowstock-modal" aria-hidden="true">
+        <div class="lowstock-modal-content">
+            <div class="lowstock-modal-header">
+                <h3>Low Stock Items (@ViewBag.LowStockItems)</h3>
+                <button type="button" class="lowstock-close" aria-label="Close low stock list" onclick="hideLowStockModal()">&times;</button>
+            </div>
+            <div class="lowstock-modal-body">
+                @if (lowStockItemsList.Any())
+                {
+                    <div class="lowstock-list">
+                        @foreach (var item in lowStockItemsList)
+                        {
+                            <div class="lowstock-row">
+                                <div class="lowstock-name">@item.Item</div>
+                                <div class="lowstock-meta">
+                                    <span class="pill warning">Stock: @item.CurrentStock</span>
+                                    <span class="pill muted">Reorder at @item.ReorderLevel</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="lowstock-empty">Great! No items are currently low on stock.</p>
+                }
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -136,7 +272,7 @@
     <script>
         const ctx = document.getElementById('statsChart');
 
-        new Chart(ctx, {
+        const statsChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: @Html.Raw(labelsJson),
@@ -184,9 +320,63 @@
                         titleColor: '#333',
                         bodyColor: '#333'
                     }
+                },
+                onClick: (event, elements, chart) => {
+                    if (!elements.length) return;
+                    const barIndex = elements[0].index;
+                    const label = chart.data.labels[barIndex];
+                    if (label === 'Low Stock') {
+                        showLowStockModal();
+                    }
                 }
             }
         });
+
+        const lowStockModal = document.getElementById('lowStockModal');
+
+        function showLowStockModal() {
+            if (!lowStockModal) return;
+            lowStockModal.classList.add('open');
+            lowStockModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideLowStockModal() {
+            if (!lowStockModal) return;
+            lowStockModal.classList.remove('open');
+            lowStockModal.setAttribute('aria-hidden', 'true');
+        }
+
+        if (lowStockModal) {
+            lowStockModal.addEventListener('click', (event) => {
+                if (event.target === lowStockModal) {
+                    hideLowStockModal();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && lowStockModal.classList.contains('open')) {
+                    hideLowStockModal();
+                }
+            });
+        }
+
+        function filterBestSellers(filterType) {
+            const allList = document.getElementById('best-sellers-all');
+            const todayList = document.getElementById('best-sellers-today');
+            const buttons = document.querySelectorAll('.best-seller-filters .sales-filter-btn');
+
+            if (filterType === 'today') {
+                allList.style.display = 'none';
+                todayList.style.display = 'flex';
+            } else {
+                allList.style.display = 'flex';
+                todayList.style.display = 'none';
+            }
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.querySelector(`.best-seller-filters .sales-filter-btn[data-bs-filter="${filterType}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
 
         function filterSales(filterType) {
             // Hide all sales containers

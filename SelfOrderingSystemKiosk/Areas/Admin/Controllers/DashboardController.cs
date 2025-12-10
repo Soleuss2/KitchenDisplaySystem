@@ -19,7 +19,7 @@ namespace SelfOrderingSystemKiosk.Controllers
             _orderService = orderService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? startDate = null, string? endDate = null)
         {
             ViewData["Title"] = "Dashboard";
 
@@ -31,7 +31,14 @@ namespace SelfOrderingSystemKiosk.Controllers
             // Calculate statistics
             var totalMenuItems = allMenuItems?.Count ?? 0;
             var totalInventoryItems = allMenuItems?.Count ?? 0; // All menu items have inventory now
-            var lowStockItems = allMenuItems?.Count(i => i.CurrentStock <= i.ReorderLevel) ?? 0;
+
+            // Build low stock list once so we can show details in the UI
+            var lowStockList = allMenuItems?
+                .Where(i => i.CurrentStock <= i.ReorderLevel)
+                .OrderBy(i => i.Item)
+                .ToList() ?? new List<SelfOrderingSystemKiosk.Models.InventoryItem>();
+
+            var lowStockItems = lowStockList.Count;
 
             // Get today's sales - orders created today (using UTC date range)
             var todayStart = DateTime.UtcNow.Date;
@@ -49,6 +56,42 @@ namespace SelfOrderingSystemKiosk.Controllers
             var todaysRevenue = todayOrders
                 .Where(o => o.Total > 0) // Only count orders with valid totals
                 .Sum(o => o.Total);
+
+            // Revenue split by order type (AlaCarte / Unlimited)
+            decimal todaysRevenueAlaCarte = todayOrders
+                .Where(o => (o.OrderType ?? "AlaCarte") == "AlaCarte" && o.Total > 0)
+                .Sum(o => o.Total);
+
+            decimal todaysRevenueUnlimited = todayOrders
+                .Where(o => o.OrderType == "Unlimited" && o.Total > 0)
+                .Sum(o => o.Total);
+
+            // Time-range revenue filter
+            var rangeStart = ParseDateOrDefault(startDate, todayStart);
+            var rangeEnd = ParseDateOrDefault(endDate, todayEnd);
+
+            // Ensure rangeEnd is after rangeStart
+            if (rangeEnd <= rangeStart)
+            {
+                rangeEnd = rangeStart.AddDays(1);
+            }
+
+            var rangeOrders = allOrdersList
+                .Where(o => o.OrderDate >= rangeStart && o.OrderDate < rangeEnd)
+                .ToList();
+
+            var rangeRevenue = rangeOrders.Where(o => o.Total > 0).Sum(o => o.Total);
+            var rangeRevenueAlaCarte = rangeOrders
+                .Where(o => (o.OrderType ?? "AlaCarte") == "AlaCarte" && o.Total > 0)
+                .Sum(o => o.Total);
+            var rangeRevenueUnlimited = rangeOrders
+                .Where(o => o.OrderType == "Unlimited" && o.Total > 0)
+                .Sum(o => o.Total);
+            var rangeOrderCount = rangeOrders.Count;
+
+            // Best sellers - all time and today
+            var bestSellersAllTime = BuildBestSellers(allOrdersList);
+            var bestSellersToday = BuildBestSellers(todayOrders);
 
             // Calculate sales summaries by day, month, and year
             var currentYear = DateTime.UtcNow.Year;
@@ -114,13 +157,52 @@ namespace SelfOrderingSystemKiosk.Controllers
             ViewBag.TotalMenuItems = totalMenuItems;
             ViewBag.TotalInventoryItems = totalInventoryItems;
             ViewBag.LowStockItems = lowStockItems;
+            ViewBag.LowStockList = lowStockList;
             ViewBag.TodaysSales = todaysSales;
             ViewBag.TodaysRevenue = todaysRevenue;
+            ViewBag.TodaysRevenueAlaCarte = todaysRevenueAlaCarte;
+            ViewBag.TodaysRevenueUnlimited = todaysRevenueUnlimited;
+            ViewBag.RangeStart = rangeStart;
+            ViewBag.RangeEnd = rangeEnd.AddDays(-1); // store inclusive end date for display/input
+            ViewBag.RangeRevenue = rangeRevenue;
+            ViewBag.RangeRevenueAlaCarte = rangeRevenueAlaCarte;
+            ViewBag.RangeRevenueUnlimited = rangeRevenueUnlimited;
+            ViewBag.RangeOrderCount = rangeOrderCount;
             ViewBag.DailySales = dailySales;
             ViewBag.MonthlySales = monthlySales;
             ViewBag.YearlySales = yearlySales;
+            ViewBag.BestSellersAllTime = bestSellersAllTime;
+            ViewBag.BestSellersToday = bestSellersToday;
 
             return View();
+        }
+
+        private static List<BestSeller> BuildBestSellers(IEnumerable<Order> orders)
+        {
+            return orders
+                .SelectMany(o => o.Items ?? new List<OrderItem>())
+                .GroupBy(i => i.ItemName)
+                .Select(g => new BestSeller
+                {
+                    ItemName = g.Key,
+                    Quantity = g.Sum(i => i.Quantity),
+                    Revenue = g.Sum(i => i.Price * i.Quantity)
+                })
+                .OrderByDescending(x => x.Quantity)
+                .ThenByDescending(x => x.Revenue)
+                .Take(5)
+                .ToList();
+        }
+
+        private static DateTime ParseDateOrDefault(string? date, DateTime fallbackUtcDate)
+        {
+            if (DateTime.TryParse(date, out var parsed))
+            {
+                // Treat as UTC date without time; add Date to normalize
+                return DateTime.SpecifyKind(parsed.Date, DateTimeKind.Utc);
+            }
+
+            return fallbackUtcDate;
         }
     }
 }
@@ -130,6 +212,13 @@ namespace SelfOrderingSystemKiosk.Controllers
     public class SalesData
     {
         public int Count { get; set; }
+        public decimal Revenue { get; set; }
+    }
+
+    public class BestSeller
+    {
+        public string ItemName { get; set; }
+        public int Quantity { get; set; }
         public decimal Revenue { get; set; }
     }
 }
