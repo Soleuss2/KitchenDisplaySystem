@@ -93,27 +93,27 @@ namespace SelfOrderingSystemKiosk.Controllers
             var bestSellersAllTime = BuildBestSellers(allOrdersList);
             var bestSellersToday = BuildBestSellers(todayOrders);
 
-            // Calculate sales summaries by day, month, and year
+            // Calculate sales summaries by week, month, and year
             var currentYear = DateTime.UtcNow.Year;
-            var dailySales = new Dictionary<string, SalesData>();
+            var weeklySales = new Dictionary<string, SalesData>();
             var monthlySales = new Dictionary<string, SalesData>();
             var yearlySales = new Dictionary<int, SalesData>();
 
             if (allOrdersList.Any())
             {
-                // Group orders by day (last 30 days)
-                var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30).Date;
-                var ordersByDay = allOrdersList
-                    .Where(o => o.OrderDate >= thirtyDaysAgo)
-                    .GroupBy(o => o.OrderDate.Date.ToString("yyyy-MM-dd"))
+                // Group orders by week (last 12 weeks)
+                var twelveWeeksAgo = DateTime.UtcNow.AddDays(-84).Date;
+                var ordersByWeek = allOrdersList
+                    .Where(o => o.OrderDate >= twelveWeeksAgo)
+                    .GroupBy(o => GetWeekKey(o.OrderDate))
                     .OrderBy(g => g.Key);
 
-                foreach (var dayGroup in ordersByDay)
+                foreach (var weekGroup in ordersByWeek)
                 {
-                    dailySales[dayGroup.Key] = new SalesData
+                    weeklySales[weekGroup.Key] = new SalesData
                     {
-                        Count = dayGroup.Count(),
-                        Revenue = dayGroup.Sum(o => o.Total)
+                        Count = weekGroup.Count(),
+                        Revenue = weekGroup.Sum(o => o.Total)
                     };
                 }
 
@@ -168,13 +168,30 @@ namespace SelfOrderingSystemKiosk.Controllers
             ViewBag.RangeRevenueAlaCarte = rangeRevenueAlaCarte;
             ViewBag.RangeRevenueUnlimited = rangeRevenueUnlimited;
             ViewBag.RangeOrderCount = rangeOrderCount;
-            ViewBag.DailySales = dailySales;
+            // Calculate revenue totals for chart
+            var weeklyRevenue = weeklySales.Values.Sum(s => s.Revenue);
+            var monthlyRevenue = monthlySales.Values.Sum(s => s.Revenue);
+            var yearlyRevenue = yearlySales.Values.Sum(s => s.Revenue);
+
+            ViewBag.WeeklySales = weeklySales;
             ViewBag.MonthlySales = monthlySales;
             ViewBag.YearlySales = yearlySales;
+            ViewBag.WeeklyRevenue = weeklyRevenue;
+            ViewBag.MonthlyRevenue = monthlyRevenue;
+            ViewBag.YearlyRevenue = yearlyRevenue;
             ViewBag.BestSellersAllTime = bestSellersAllTime;
             ViewBag.BestSellersToday = bestSellersToday;
 
             return View();
+        }
+
+        private static string GetWeekKey(DateTime date)
+        {
+            // Get the start of the week (Monday)
+            // If it's Sunday, treat it as the last day of the previous week
+            var dayOfWeek = date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)date.DayOfWeek;
+            var startOfWeek = date.AddDays(-(dayOfWeek - 1));
+            return startOfWeek.Date.ToString("yyyy-MM-dd");
         }
 
         private static List<BestSeller> BuildBestSellers(IEnumerable<Order> orders)

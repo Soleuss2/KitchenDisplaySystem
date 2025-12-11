@@ -43,8 +43,8 @@
                 color: #333;
             }
 
-        .logo {
-            font-size: 3rem;
+        .header h1 i {
+            margin-right: 10px;
         }
 
         .menu-btn {
@@ -56,7 +56,20 @@
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
         }
+
+            .menu-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            }
+
+            .menu-btn i {
+                font-size: 1.1em;
+            }
 
         .stats {
             display: grid;
@@ -181,7 +194,14 @@
                 margin-bottom: 10px;
                 font-size: 0.9rem;
                 color: #666;
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
+
+                .order-items h4 i {
+                    font-size: 1.1em;
+                }
 
         .item-row {
             display: flex;
@@ -292,7 +312,14 @@
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+            .date-filter-btn i {
+                font-size: 1.1em;
+            }
 
             .date-filter-btn:hover {
                 transform: translateY(-2px);
@@ -341,11 +368,11 @@
 <body>
     <div class="header">
         <h1>
-            <span class="logo">🍗</span>
+            <i class="bi bi-egg-fried" style="font-size: 2.5rem; color: #FF5722;"></i>
             Kitchen Dashboard
         </h1>
         <button class="menu-btn" onclick="window.location.href='/Admin/Dashboard'">
-            📋 MENU
+            <i class="bi bi-clipboard"></i> MENU
         </button>
     </div>
 
@@ -356,16 +383,16 @@
 
     <div class="date-filters">
         <button class="date-filter-btn @(ViewBag.DateFilter == "all" || ViewBag.DateFilter == null ? "active" : "")" onclick="filterByDate('all')">
-            📅 All Time
+            <i class="bi bi-calendar"></i> All Time
         </button>
         <button class="date-filter-btn @(ViewBag.DateFilter == "day" ? "active" : "")" onclick="filterByDate('day')">
-            📆 Today
+            <i class="bi bi-calendar-day"></i> Today
         </button>
         <button class="date-filter-btn @(ViewBag.DateFilter == "week" ? "active" : "")" onclick="filterByDate('week')">
-            📊 This Week
+            <i class="bi bi-graph-up"></i> This Week
         </button>
         <button class="date-filter-btn @(ViewBag.DateFilter == "month" ? "active" : "")" onclick="filterByDate('month')">
-            📈 This Month
+            <i class="bi bi-graph-up-arrow"></i> This Month
         </button>
     </div>
 
@@ -413,7 +440,7 @@
                 </div>
 
                 <div class="order-items">
-                    <h4>📋 Order Items:</h4>
+                    <h4><i class="bi bi-clipboard"></i> Order Items:</h4>
                     @foreach (var item in order.Items)
                     {
                         <div class="item-row">
@@ -436,16 +463,16 @@
                     @if (order.Status == "Pending")
                     {
                         <button type="button" class="action-btn btn-start" onclick="updateStatus('@order.Id', 'In Progress', event)">
-                            ▶️ Start
+                            <i class="bi bi-play-fill"></i> Start
                         </button>
                         <button type="button" class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed', event)">
-                            ✓ Done
+                            <i class="bi bi-check-circle"></i> Done
                         </button>
                     }
                     else if (order.Status == "In Progress")
                     {
                         <button type="button" class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed', event)" style="grid-column: 1 / -1;">
-                            ✓ Done
+                            <i class="bi bi-check-circle"></i> Done
                         </button>
                     }
                     else

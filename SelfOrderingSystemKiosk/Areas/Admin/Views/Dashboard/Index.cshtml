@@ -47,39 +47,52 @@
                 Unlimited: ₱@todayRevenueUnlimited.ToString("N2")
             </div>
         </div>
+        <div class="stat-card highlight-card clickable-card" role="button" tabindex="0" onclick="showBestSellersModal()" onkeypress="if(event.key === 'Enter' || event.key === ' ') { showBestSellersModal(); }">
+            <h3><i class="bi bi-trophy"></i> Best Sellers</h3>
+            <div class="stat-value" style="font-size: 1.2em;">Top 5</div>
+            <div style="color: #666; font-size: 0.85em; margin-top: 5px;">Click to view details</div>
+        </div>
     </div>
 
     <!-- Sales Summary with Filters -->
     <div class="sales-summary-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 20px;">
-            <h2 style="color: #e67e22; margin: 0;">📊 Sales Summary</h2>
-            <div class="sales-filter-buttons">
-                <button class="sales-filter-btn active" data-filter="day" onclick="filterSales('day')">Day</button>
+            <h2 style="color: #e67e22; margin: 0; display: flex; align-items: center; gap: 10px;"><i class="bi bi-graph-up"></i> <span>Sales Summary</span></h2>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="sales-filter-btn active" data-filter="week" onclick="filterSales('week')">Week</button>
                 <button class="sales-filter-btn" data-filter="month" onclick="filterSales('month')">Month</button>
                 <button class="sales-filter-btn" data-filter="year" onclick="filterSales('year')">Year</button>
                 <button class="sales-filter-btn" data-filter="today" onclick="filterSales('today')">Today's Sales</button>
+                <button class="sales-filter-btn date-range-btn" onclick="openDateRangePopup()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-calendar-range"></i> <span>Custom Range</span>
+                </button>
             </div>
         </div>
         
-        <!-- Daily Sales Summary -->
-        <div id="daily-sales" class="sales-summary-container" style="display: none;">
-            @if (ViewBag.DailySales != null && ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.DailySales).Any())
+        <!-- Weekly Sales Summary -->
+        <div id="weekly-sales" class="sales-summary-container" style="display: block;">
+            @if (ViewBag.WeeklySales != null && ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.WeeklySales).Any())
             {
-                @foreach (var dayData in ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.DailySales).OrderByDescending(x => x.Key))
+                @foreach (var weekData in ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.WeeklySales).OrderByDescending(x => x.Key))
                 {
-                    var date = DateTime.Parse(dayData.Key);
+                    var weekStart = DateTime.Parse(weekData.Key);
+                    var weekEnd = weekStart.AddDays(6);
                     <div class="sales-card">
-                        <h3>@date.ToString("MMM dd, yyyy")</h3>
+                        <h3>Week of @weekStart.ToString("MMM dd") - @weekEnd.ToString("MMM dd, yyyy")</h3>
                         <div class="sales-stat">
                             <span class="sales-label">Orders:</span>
-                            <span class="sales-value">@dayData.Value.Count</span>
+                            <span class="sales-value">@weekData.Value.Count</span>
                         </div>
                         <div class="sales-stat">
                             <span class="sales-label">Revenue:</span>
-                            <span class="sales-value revenue">₱@dayData.Value.Revenue.ToString("N2")</span>
+                            <span class="sales-value revenue">₱@weekData.Value.Revenue.ToString("N2")</span>
                         </div>
                     </div>
                 }
+            }
+            else
+            {
+                <p class="lowstock-empty">No weekly sales data available.</p>
             }
         </div>
 
@@ -106,7 +119,7 @@
         </div>
 
         <!-- Yearly Sales Summary -->
-        <div id="yearly-sales" class="sales-summary-container" style="display: block;">
+        <div id="yearly-sales" class="sales-summary-container" style="display: none;">
             @if (ViewBag.YearlySales != null && ((Dictionary<int, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.YearlySales).Any())
             {
                 @foreach (var yearData in ((Dictionary<int, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.YearlySales).OrderByDescending(x => x.Key))
@@ -150,31 +163,38 @@
         </div>
     </div>
 
-    <!-- Revenue Time Range Filter -->
-    <div class="range-filter">
-        <form method="get" class="range-filter-form">
-            <div class="range-filter-fields">
-                <label>
-                    From
-                    <input type="date" name="startDate" value="@rangeStart.ToString("yyyy-MM-dd")" />
-                </label>
-                <label>
-                    To
-                    <input type="date" name="endDate" value="@rangeEnd.ToString("yyyy-MM-dd")" />
-                </label>
+    <!-- Date Range Popup Modal -->
+    <div id="dateRangeModal" class="date-range-modal" aria-hidden="true">
+        <div class="date-range-modal-content">
+            <div class="date-range-modal-header">
+                <h3><i class="bi bi-calendar-range"></i> Custom Date Range</h3>
+                <button type="button" class="date-range-close" aria-label="Close date range" onclick="closeDateRangePopup()">&times;</button>
             </div>
-            <button type="submit" class="range-filter-apply">Apply</button>
-        </form>
-        <div class="range-summary">
-            <div>
-                <div class="range-title">Revenue (@rangeStart.ToString("MMM dd, yyyy") - @rangeEnd.ToString("MMM dd, yyyy"))</div>
-                <div class="range-total">Total: ₱@rangeRevenue.ToString("N2")</div>
-            </div>
-            <div class="range-breakdown">
-                <span class="pill warning">Ala Carte: ₱@rangeRevenueAlaCarte.ToString("N2")</span>
-                <span class="pill muted">Unlimited: ₱@rangeRevenueUnlimited.ToString("N2")</span>
-                <span class="pill info">Orders: @rangeOrderCount</span>
-            </div>
+            <form method="get" class="date-range-form" onsubmit="closeDateRangePopup()">
+                <div class="date-range-fields">
+                    <label>
+                        From
+                        <input type="date" name="startDate" value="@rangeStart.ToString("yyyy-MM-dd")" required />
+                    </label>
+                    <label>
+                        To
+                        <input type="date" name="endDate" value="@rangeEnd.ToString("yyyy-MM-dd")" required />
+                    </label>
+                </div>
+                <div class="date-range-summary">
+                    <div class="range-title">Revenue (@rangeStart.ToString("MMM dd, yyyy") - @rangeEnd.ToString("MMM dd, yyyy"))</div>
+                    <div class="range-total">Total: ₱@rangeRevenue.ToString("N2")</div>
+                    <div class="range-breakdown">
+                        <span class="pill warning">Ala Carte: ₱@rangeRevenueAlaCarte.ToString("N2")</span>
+                        <span class="pill muted">Unlimited: ₱@rangeRevenueUnlimited.ToString("N2")</span>
+                        <span class="pill info">Orders: @rangeOrderCount</span>
+                    </div>
+                </div>
+                <div class="date-range-actions">
+                    <button type="button" class="btn-cancel" onclick="closeDateRangePopup()">Cancel</button>
+                    <button type="submit" class="range-filter-apply">Apply</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -183,55 +203,60 @@
         <canvas id="statsChart"></canvas>
     </div>
 
-    <!-- Best Sellers -->
-    <div class="best-sellers">
-        <div class="best-sellers-header">
-            <h2>🏆 Best Sellers</h2>
-            <div class="sales-filter-buttons best-seller-filters">
-                <button class="sales-filter-btn active" data-bs-filter="all" onclick="filterBestSellers('all')">All Time</button>
-                <button class="sales-filter-btn" data-bs-filter="today" onclick="filterBestSellers('today')">Today</button>
+    <!-- Best Sellers Modal -->
+    <div id="bestSellersModal" class="lowstock-modal" aria-hidden="true">
+        <div class="lowstock-modal-content">
+            <div class="lowstock-modal-header">
+                <h3><i class="bi bi-trophy"></i> Best Sellers</h3>
+                <button type="button" class="lowstock-close" aria-label="Close best sellers" onclick="hideBestSellersModal()">&times;</button>
             </div>
-        </div>
-        <span class="best-sellers-sub">Top 5 by quantity</span>
+            <div class="lowstock-modal-body">
+                <div class="best-seller-filters" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+                    <button class="sales-filter-btn active" data-bs-filter="all" onclick="filterBestSellers('all')">All Time</button>
+                    <button class="sales-filter-btn" data-bs-filter="today" onclick="filterBestSellers('today')">Today</button>
+                </div>
+                <span class="best-sellers-sub" style="display: block; text-align: center; margin-bottom: 15px;">Top 5 by quantity</span>
 
-        <div id="best-sellers-all" class="best-sellers-list" style="display: flex;">
-            @if (bestSellersAll.Any())
-            {
-                @foreach (var item in bestSellersAll)
-                {
-                    <div class="best-seller-row">
-                        <div class="best-seller-name">@item.ItemName</div>
-                        <div class="best-seller-meta">
-                            <span class="pill warning">Sold: @item.Quantity</span>
-                            <span class="pill muted">₱@item.Revenue.ToString("N2")</span>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <p class="lowstock-empty">No sales yet to rank best sellers.</p>
-            }
-        </div>
+                <div id="best-sellers-all" class="best-sellers-list" style="display: flex; flex-direction: column;">
+                    @if (bestSellersAll.Any())
+                    {
+                        @foreach (var item in bestSellersAll)
+                        {
+                            <div class="best-seller-row">
+                                <div class="best-seller-name">@item.ItemName</div>
+                                <div class="best-seller-meta">
+                                    <span class="pill warning">Sold: @item.Quantity</span>
+                                    <span class="pill muted">₱@item.Revenue.ToString("N2")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="lowstock-empty">No sales yet to rank best sellers.</p>
+                    }
+                </div>
 
-        <div id="best-sellers-today" class="best-sellers-list" style="display: none;">
-            @if (bestSellersToday.Any())
-            {
-                @foreach (var item in bestSellersToday)
-                {
-                    <div class="best-seller-row">
-                        <div class="best-seller-name">@item.ItemName</div>
-                        <div class="best-seller-meta">
-                            <span class="pill warning">Sold: @item.Quantity</span>
-                            <span class="pill muted">₱@item.Revenue.ToString("N2")</span>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <p class="lowstock-empty">No sales today yet to rank best sellers.</p>
-            }
+                <div id="best-sellers-today" class="best-sellers-list" style="display: none; flex-direction: column;">
+                    @if (bestSellersToday.Any())
+                    {
+                        @foreach (var item in bestSellersToday)
+                        {
+                            <div class="best-seller-row">
+                                <div class="best-seller-name">@item.ItemName</div>
+                                <div class="best-seller-meta">
+                                    <span class="pill warning">Sold: @item.Quantity</span>
+                                    <span class="pill muted">₱@item.Revenue.ToString("N2")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="lowstock-empty">No sales today yet to rank best sellers.</p>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 
@@ -272,26 +297,35 @@
     <script>
         const ctx = document.getElementById('statsChart');
 
+        // Revenue Chart Data
+        const revenueLabels = ['Today', 'This Week', 'This Month', 'This Year'];
+        const revenueData = [
+            @todayRevenue,
+            @(ViewBag.WeeklyRevenue ?? 0m),
+            @(ViewBag.MonthlyRevenue ?? 0m),
+            @(ViewBag.YearlyRevenue ?? 0m)
+        ];
+
         const statsChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: @Html.Raw(labelsJson),
+                labels: revenueLabels,
                 datasets: [{
-                    label: 'Statistics',
-                    data: @Html.Raw(valuesJson),
+                    label: 'Revenue (₱)',
+                    data: revenueData,
                     backgroundColor: [
-                        'rgba(52, 152, 219, 0.7)',
                         'rgba(46, 204, 113, 0.7)',
+                        'rgba(52, 152, 219, 0.7)',
                         'rgba(241, 196, 15, 0.7)',
-                        'rgba(231, 76, 60, 0.7)'
+                        'rgba(230, 126, 34, 0.7)'
                     ],
                     borderColor: [
-                        'rgba(52, 152, 219, 1)',
                         'rgba(46, 204, 113, 1)',
+                        'rgba(52, 152, 219, 1)',
                         'rgba(241, 196, 15, 1)',
-                        'rgba(231, 76, 60, 1)'
+                        'rgba(230, 126, 34, 1)'
                     ],
-                    borderWidth: 1,
+                    borderWidth: 2,
                     borderRadius: 8
                 }]
             },
@@ -301,7 +335,12 @@
                 scales: {
                     x: {
                         beginAtZero: true,
-                        ticks: { color: '#333' },
+                        ticks: { 
+                            color: '#333',
+                            callback: function(value) {
+                                return '₱' + value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            }
+                        },
                         grid: { color: 'rgba(0,0,0,0.05)' }
                     },
                     y: {
@@ -318,15 +357,12 @@
                         borderColor: '#ccc',
                         borderWidth: 1,
                         titleColor: '#333',
-                        bodyColor: '#333'
-                    }
-                },
-                onClick: (event, elements, chart) => {
-                    if (!elements.length) return;
-                    const barIndex = elements[0].index;
-                    const label = chart.data.labels[barIndex];
-                    if (label === 'Low Stock') {
-                        showLowStockModal();
+                        bodyColor: '#333',
+                        callbacks: {
+                            label: function(context) {
+                                return 'Revenue: ₱' + context.parsed.x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            }
+                        }
                     }
                 }
             }
@@ -380,10 +416,15 @@
 
         function filterSales(filterType) {
             // Hide all sales containers
-            document.getElementById('daily-sales').style.display = 'none';
-            document.getElementById('monthly-sales').style.display = 'none';
-            document.getElementById('yearly-sales').style.display = 'none';
-            document.getElementById('today-sales').style.display = 'none';
+            const weeklySales = document.getElementById('weekly-sales');
+            const monthlySales = document.getElementById('monthly-sales');
+            const yearlySales = document.getElementById('yearly-sales');
+            const todaySales = document.getElementById('today-sales');
+            
+            if (weeklySales) weeklySales.style.display = 'none';
+            if (monthlySales) monthlySales.style.display = 'none';
+            if (yearlySales) yearlySales.style.display = 'none';
+            if (todaySales) todaySales.style.display = 'none';
 
             // Remove active class from all buttons
             document.querySelectorAll('.sales-filter-btn').forEach(btn => {
@@ -391,18 +432,77 @@
             });
 
             // Show selected container and activate button
-            if (filterType === 'day') {
-                document.getElementById('daily-sales').style.display = 'grid';
+            if (filterType === 'week') {
+                if (weeklySales) weeklySales.style.display = 'grid';
             } else if (filterType === 'month') {
-                document.getElementById('monthly-sales').style.display = 'grid';
+                if (monthlySales) monthlySales.style.display = 'grid';
             } else if (filterType === 'year') {
-                document.getElementById('yearly-sales').style.display = 'grid';
+                if (yearlySales) yearlySales.style.display = 'grid';
             } else if (filterType === 'today') {
-                document.getElementById('today-sales').style.display = 'grid';
+                if (todaySales) todaySales.style.display = 'grid';
             }
 
             // Add active class to clicked button
-            document.querySelector(`[data-filter="${filterType}"]`).classList.add('active');
+            const activeBtn = document.querySelector(`[data-filter="${filterType}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        // Best Sellers Modal Functions
+        const bestSellersModal = document.getElementById('bestSellersModal');
+
+        function showBestSellersModal() {
+            if (!bestSellersModal) return;
+            bestSellersModal.classList.add('open');
+            bestSellersModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideBestSellersModal() {
+            if (!bestSellersModal) return;
+            bestSellersModal.classList.remove('open');
+            bestSellersModal.setAttribute('aria-hidden', 'true');
+        }
+
+        if (bestSellersModal) {
+            bestSellersModal.addEventListener('click', (event) => {
+                if (event.target === bestSellersModal) {
+                    hideBestSellersModal();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && bestSellersModal.classList.contains('open')) {
+                    hideBestSellersModal();
+                }
+            });
+        }
+
+        // Date Range Popup Functions
+        const dateRangeModal = document.getElementById('dateRangeModal');
+
+        function openDateRangePopup() {
+            if (!dateRangeModal) return;
+            dateRangeModal.classList.add('open');
+            dateRangeModal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeDateRangePopup() {
+            if (!dateRangeModal) return;
+            dateRangeModal.classList.remove('open');
+            dateRangeModal.setAttribute('aria-hidden', 'true');
+        }
+
+        if (dateRangeModal) {
+            dateRangeModal.addEventListener('click', (event) => {
+                if (event.target === dateRangeModal) {
+                    closeDateRangePopup();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && dateRangeModal.classList.contains('open')) {
+                    closeDateRangePopup();
+                }
+            });
         }
     </script>
 }

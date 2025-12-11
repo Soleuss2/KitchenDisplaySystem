@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KDS Admin Panel</title>
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
@@ -19,13 +20,13 @@
             </div>
 
             <ul class="nav-links">
-                <li><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">📊 Dashboard</a></li>
-                <li><a asp-area="Admin" asp-controller="Menu" asp-action="Index">🍔 Menu & Inventory</a></li>
-                <li><a asp-area="Kitchen" asp-controller="Kitchen" asp-action="Index">🧾 Orders</a></li>
+                <li><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
+                <li><a asp-area="Admin" asp-controller="Menu" asp-action="Index"><i class="bi bi-menu-button-wide"></i> <span>Menu & Inventory</span></a></li>
+                <li><a asp-area="Kitchen" asp-controller="Kitchen" asp-action="Index"><i class="bi bi-receipt"></i> <span>Orders</span></a></li>
             </ul>
 
             <div class="logout-section">
-                <a href="#" class="logout-btn" onclick="confirmLogout(event)">🚪 Logout</a>
+                <a href="#" class="logout-btn" onclick="confirmLogout(event)"><i class="bi bi-box-arrow-right"></i> <span>Logout</span></a>
             </div>
         </nav>
 
