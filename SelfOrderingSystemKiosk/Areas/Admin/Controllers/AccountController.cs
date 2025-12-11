@@ -88,6 +88,12 @@ namespace SelfOrderingSystemKiosk.Controllers
 
 
         [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
+        [HttpGet]
         public IActionResult ForgotPassword()
         {
             return View();

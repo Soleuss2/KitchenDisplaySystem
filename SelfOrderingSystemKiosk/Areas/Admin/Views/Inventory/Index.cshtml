@@ -38,33 +38,47 @@
     </div>
 
     <!-- Table -->
-    <div class="table-container" style="margin-top:0;">
+    <div class="table-container" id="inventoryTableContainer" style="margin-top:0; max-height: 600px !important; overflow-y: auto !important; overflow-x: auto !important;">
         @if (Model != null && Model.Any())
         {
-            <table>
+            <table id="inventoryTable">
                 <thead>
                     <tr>
-                        <th>Item</th>
-                        <th>Category</th>
-                        <th>Stock</th>
-                        <th>Unit</th>
-                        <th>Price</th>
-                        <th>Reorder Level</th>
-                        <th>Status</th>
+                        <th class="sortable" data-column="item" onclick="sortTable(0, 'item'); return false;" style="cursor: pointer;">
+                            Item <span class="sort-icon" style="margin-left: 5px;">⇅</span>
+                        </th>
+                        <th class="sortable" data-column="category" onclick="sortTable(1, 'category'); return false;" style="cursor: pointer;">
+                            Category <span class="sort-icon" style="margin-left: 5px;">⇅</span>
+                        </th>
+                        <th class="sortable" data-column="stock" onclick="sortTable(2, 'stock'); return false;" style="cursor: pointer;">
+                            Stock <span class="sort-icon" style="margin-left: 5px;">⇅</span>
+                        </th>
+                        <th class="sortable" data-column="unit" onclick="sortTable(3, 'unit'); return false;" style="cursor: pointer;">
+                            Unit <span class="sort-icon" style="margin-left: 5px;">⇅</span>
+                        </th>
+                        <th class="sortable" data-column="price" onclick="sortTable(4, 'price'); return false;" style="cursor: pointer;">
+                            Price <span class="sort-icon" style="margin-left: 5px;">⇅</span>
+                        </th>
+                        <th class="sortable" data-column="reorder" onclick="sortTable(5, 'reorder'); return false;" style="cursor: pointer;">
+                            Reorder Level <span class="sort-icon" style="margin-left: 5px;">⇅</span>
+                        </th>
+                        <th class="sortable" data-column="status" onclick="sortTable(6, 'status'); return false;" style="cursor: pointer;">
+                            Status <span class="sort-icon" style="margin-left: 5px;">⇅</span>
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="inventoryTableBody">
                     @foreach (var i in Model)
                     {
                         <tr>
-                            <td>@i.Item</td>
-                            <td>@i.Category</td>
-                            <td>@i.CurrentStock</td>
-                            <td>@i.Unit</td>
-                            <td>₱@i.Price.ToString("0.00")</td>
-                            <td>@i.ReorderLevel</td>
-                            <td>
+                            <td data-sort-value="@i.Item.ToLower()">@i.Item</td>
+                            <td data-sort-value="@i.Category.ToLower()">@i.Category</td>
+                            <td data-sort-value="@i.CurrentStock">@i.CurrentStock</td>
+                            <td data-sort-value="@i.Unit.ToLower()">@i.Unit</td>
+                            <td data-sort-value="@i.Price">₱@i.Price.ToString("0.00")</td>
+                            <td data-sort-value="@i.ReorderLevel">@i.ReorderLevel</td>
+                            <td data-sort-value="@i.Status.ToLower()">
                                 @if (i.Status == "Low Stock")
                                 {
                                     <span class="status-badge low">@i.Status</span>
@@ -122,5 +136,99 @@
                 setTimeout(() => popup.style.display = "none", 2500);
             }
         });
+
+        // Sorting functionality
+        let currentSortColumn = -1;
+        let currentSortDirection = 'asc';
+
+        function sortTable(columnIndex, columnType) {
+            console.log('sortTable called:', columnIndex, columnType);
+            
+            const table = document.getElementById('inventoryTable');
+            if (!table) {
+                console.error('Table not found');
+                alert('Table not found. Please refresh the page.');
+                return;
+            }
+            
+            const tbody = document.getElementById('inventoryTableBody');
+            if (!tbody) {
+                console.error('Table body not found');
+                alert('Table body not found. Please refresh the page.');
+                return;
+            }
+            
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            if (rows.length === 0) {
+                console.warn('No rows to sort');
+                return;
+            }
+            
+            console.log('Found', rows.length, 'rows to sort');
+            
+            const headers = table.querySelectorAll('thead th');
+
+            // Remove sort indicators from all headers
+            headers.forEach(header => {
+                const icon = header.querySelector('.sort-icon');
+                if (icon) {
+                    icon.textContent = '⇅';
+                    icon.style.color = '';
+                }
+            });
+
+            // Toggle sort direction if clicking the same column
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortDirection = 'asc';
+                currentSortColumn = columnIndex;
+            }
+
+            // Update sort indicator
+            const currentHeader = headers[columnIndex];
+            if (currentHeader) {
+                const currentIcon = currentHeader.querySelector('.sort-icon');
+                if (currentIcon) {
+                    currentIcon.textContent = currentSortDirection === 'asc' ? '↑' : '↓';
+                    currentIcon.style.color = '#d35400';
+                }
+            }
+
+            // Sort rows
+            rows.sort((a, b) => {
+                const aCell = a.cells[columnIndex];
+                const bCell = b.cells[columnIndex];
+                
+                if (!aCell || !bCell) return 0;
+                
+                const aValue = aCell.getAttribute('data-sort-value') || aCell.textContent.trim();
+                const bValue = bCell.getAttribute('data-sort-value') || bCell.textContent.trim();
+
+                let comparison = 0;
+
+                // Handle numeric sorting for stock, price, and reorder level
+                if (columnType === 'stock' || columnType === 'price' || columnType === 'reorder') {
+                    const aNum = parseFloat(aValue) || 0;
+                    const bNum = parseFloat(bValue) || 0;
+                    comparison = aNum - bNum;
+                } else {
+                    // String sorting
+                    comparison = aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
+                }
+
+                return currentSortDirection === 'asc' ? comparison : -comparison;
+            });
+
+            // Remove all rows from tbody
+            rows.forEach(row => {
+                if (row.parentNode === tbody) {
+                    tbody.removeChild(row);
+                }
+            });
+
+            // Append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
     </script>
 }

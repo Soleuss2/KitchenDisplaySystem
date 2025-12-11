@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace SelfOrderingSystemKiosk.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Kitchen")]
     public class DashboardController : Controller
     {
         private readonly StockService _stockService;
@@ -78,9 +78,24 @@ namespace SelfOrderingSystemKiosk.Controllers
                 .Where(o => o.DiningType == "TakeOut" && o.Total > 0)
                 .Sum(o => o.Total);
 
-            // Time-range revenue filter
-            var rangeStart = ParseDateOrDefault(startDate, todayStart);
-            var rangeEnd = ParseDateOrDefault(endDate, todayEnd);
+            // Time-range revenue filter - default to this week if no dates provided
+            DateTime defaultRangeStart, defaultRangeEnd;
+            if (string.IsNullOrEmpty(startDate) && string.IsNullOrEmpty(endDate))
+            {
+                // Default to this week
+                var now = DateTime.UtcNow;
+                var dayOfWeek = now.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)now.DayOfWeek;
+                defaultRangeStart = now.Date.AddDays(-(dayOfWeek - 1));
+                defaultRangeEnd = defaultRangeStart.AddDays(7);
+            }
+            else
+            {
+                defaultRangeStart = todayStart;
+                defaultRangeEnd = todayEnd;
+            }
+            
+            var rangeStart = ParseDateOrDefault(startDate, defaultRangeStart);
+            var rangeEnd = ParseDateOrDefault(endDate, defaultRangeEnd);
 
             // Ensure rangeEnd is after rangeStart
             if (rangeEnd <= rangeStart)
@@ -110,69 +125,33 @@ namespace SelfOrderingSystemKiosk.Controllers
             
             var rangeOrderCount = rangeOrders.Count;
 
-            // Best sellers - all time and today
+            // Best sellers - all time, today, and this month
             var bestSellersAllTime = BuildBestSellers(allOrdersList);
             var bestSellersToday = BuildBestSellers(todayOrders);
+            
+            // Monthly best sellers - orders from current month
+            var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var monthEnd = monthStart.AddMonths(1);
+            var monthOrders = allOrdersList
+                .Where(o => o.OrderDate >= monthStart && o.OrderDate < monthEnd)
+                .ToList();
+            var bestSellersMonthly = BuildBestSellers(monthOrders);
 
-            // Calculate sales summaries by week, month, and year
-            var currentYear = DateTime.UtcNow.Year;
-            var weeklySales = new Dictionary<string, SalesData>();
-            var monthlySales = new Dictionary<string, SalesData>();
-            var yearlySales = new Dictionary<int, SalesData>();
-
-            if (allOrdersList.Any())
+            // Calculate revenue for chart based on date range
+            // Group orders by day within the selected range for the chart
+            var chartData = new Dictionary<string, decimal>();
+            if (rangeOrders.Any())
             {
-                // Group orders by week (last 12 weeks)
-                var twelveWeeksAgo = DateTime.UtcNow.AddDays(-84).Date;
-                var ordersByWeek = allOrdersList
-                    .Where(o => o.OrderDate >= twelveWeeksAgo)
-                    .GroupBy(o => GetWeekKey(o.OrderDate))
+                var ordersByDay = rangeOrders
+                    .Where(o => o.Total > 0)
+                    .GroupBy(o => o.OrderDate.Date.ToString("yyyy-MM-dd"))
                     .OrderBy(g => g.Key);
 
-                foreach (var weekGroup in ordersByWeek)
+                foreach (var dayGroup in ordersByDay)
                 {
-                    weeklySales[weekGroup.Key] = new SalesData
-                    {
-                        Count = weekGroup.Count(),
-                        Revenue = weekGroup.Sum(o => o.Total)
-                    };
-                }
-
-                // Group orders by month (last 12 months)
-                var twelveMonthsAgo = DateTime.UtcNow.AddMonths(-12);
-                var ordersByMonth = allOrdersList
-                    .Where(o => o.OrderDate >= twelveMonthsAgo)
-                    .GroupBy(o => o.OrderDate.ToString("yyyy-MM"))
-                    .OrderBy(g => g.Key);
-
-                foreach (var monthGroup in ordersByMonth)
-                {
-                    monthlySales[monthGroup.Key] = new SalesData
-                    {
-                        Count = monthGroup.Count(),
-                        Revenue = monthGroup.Sum(o => o.Total)
-                    };
-                }
-
-                // Group orders by year (last 5 years)
-                var ordersByYear = allOrdersList
-                    .Where(o => o.OrderDate.Year >= currentYear - 4)
-                    .GroupBy(o => o.OrderDate.Year)
-                    .OrderBy(g => g.Key);
-
-                foreach (var yearGroup in ordersByYear)
-                {
-                    yearlySales[yearGroup.Key] = new SalesData
-                    {
-                        Count = yearGroup.Count(),
-                        Revenue = yearGroup.Sum(o => o.Total)
-                    };
+                    chartData[dayGroup.Key] = dayGroup.Sum(o => o.Total);
                 }
             }
-
-            // Data for the bar chart
-            ViewBag.Labels = new[] { "Menu Items", "Inventory Items", "Low Stock", "Today's Sales" };
-            ViewBag.Values = new[] { totalMenuItems, totalInventoryItems, lowStockItems, todaysSales };
 
             // Pass individual stats to view for stat cards
             ViewBag.TotalMenuItems = totalMenuItems;
@@ -193,40 +172,49 @@ namespace SelfOrderingSystemKiosk.Controllers
             ViewBag.RangeRevenueDineIn = rangeRevenueDineIn;
             ViewBag.RangeRevenueTakeOut = rangeRevenueTakeOut;
             ViewBag.RangeOrderCount = rangeOrderCount;
-            // Calculate revenue totals for chart
-            var weeklyRevenue = weeklySales.Values.Sum(s => s.Revenue);
-            var monthlyRevenue = monthlySales.Values.Sum(s => s.Revenue);
-            var yearlyRevenue = yearlySales.Values.Sum(s => s.Revenue);
-
-            ViewBag.WeeklySales = weeklySales;
-            ViewBag.MonthlySales = monthlySales;
-            ViewBag.YearlySales = yearlySales;
-            ViewBag.WeeklyRevenue = weeklyRevenue;
-            ViewBag.MonthlyRevenue = monthlyRevenue;
-            ViewBag.YearlyRevenue = yearlyRevenue;
+            ViewBag.ChartData = chartData;
             ViewBag.BestSellersAllTime = bestSellersAllTime;
             ViewBag.BestSellersToday = bestSellersToday;
+            ViewBag.BestSellersMonthly = bestSellersMonthly;
+            ViewBag.HasCustomRange = !string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate);
 
             return View();
         }
 
-        private static string GetWeekKey(DateTime date)
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> RestockItem(string id, int quantity)
         {
-            // Get the start of the week (Monday)
-            // If it's Sunday, treat it as the last day of the previous week
-            var dayOfWeek = date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)date.DayOfWeek;
-            var startOfWeek = date.AddDays(-(dayOfWeek - 1));
-            return startOfWeek.Date.ToString("yyyy-MM-dd");
+            try
+            {
+                var item = await _stockService.GetByIdAsync(id);
+                if (item == null)
+                {
+                    return Json(new { success = false, message = "Item not found." });
+                }
+
+                item.CurrentStock += quantity;
+                item.Status = item.CurrentStock <= item.ReorderLevel ? "Low Stock" : "In Stock";
+                item.Availability = item.CurrentStock == 0 ? "Unavailable" : "Available";
+
+                await _stockService.UpdateAsync(item);
+                return Json(new { success = true, message = $"Successfully restocked {item.Item} by {quantity}. New stock: {item.CurrentStock}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
         }
 
         private static List<BestSeller> BuildBestSellers(IEnumerable<Order> orders)
         {
             return orders
                 .SelectMany(o => o.Items ?? new List<OrderItem>())
-                .GroupBy(i => i.ItemName)
+                .Where(i => !string.IsNullOrEmpty(i.ItemName))
+                .GroupBy(i => i.ItemName ?? string.Empty)
                 .Select(g => new BestSeller
                 {
-                    ItemName = g.Key,
+                    ItemName = g.Key ?? string.Empty,
                     Quantity = g.Sum(i => i.Quantity),
                     Revenue = g.Sum(i => i.Price * i.Quantity)
                 })
@@ -259,7 +247,7 @@ namespace SelfOrderingSystemKiosk.Controllers
 
     public class BestSeller
     {
-        public string ItemName { get; set; }
+        public string ItemName { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public decimal Revenue { get; set; }
     }

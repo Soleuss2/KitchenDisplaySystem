@@ -116,8 +116,8 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Kiosk}/{action=Index}/{id?}",
-    defaults: new { area = "Customer" });
+    pattern: "{controller=Dashboard}/{action=Index}/{id?}",
+    defaults: new { area = "Admin" });
 
 // Use PORT environment variable for Render/cloud deployments
 var port = Environment.GetEnvironmentVariable("PORT");

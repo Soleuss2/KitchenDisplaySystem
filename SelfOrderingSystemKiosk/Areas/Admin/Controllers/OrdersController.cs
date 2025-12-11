@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace SelfOrderingSystemKiosk.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Kitchen")]
     public class OrdersController : Controller
     {
         private readonly OrderService _orderService;

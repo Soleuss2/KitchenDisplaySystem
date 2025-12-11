@@ -291,6 +291,13 @@
         <h1>Order Confirmed!</h1>
         <p class="text-muted">Thank you for your order</p>
         <div class="order-number">@Model.OrderNumber</div>
+        @if (!string.IsNullOrEmpty(Model.TableNumber))
+        {
+            <div style="background: #fff3e6; border: 2px solid #e67e22; border-radius: 10px; padding: 10px 20px; margin: 15px auto; display: inline-block;">
+                <i class="bi bi-table" style="color: #d35400; margin-right: 5px;"></i>
+                <strong style="color: #d35400; font-size: 1.1em;">Table @Model.TableNumber</strong>
+            </div>
+        }
         <p class="text-muted">
             <i class="bi bi-clock"></i> Order placed on @Model.OrderDate.ToLocalTime().ToString("MMMM dd, yyyy h:mm tt")
         </p>
@@ -425,6 +432,12 @@
             <button class="btn-secondary" disabled style="opacity: 0.6; cursor: not-allowed;">
                 <i class="bi bi-x-circle"></i> Cannot Cancel
             </button>
+        }
+        @if (!string.IsNullOrEmpty(Model.TableNumber))
+        {
+            <a asp-action="TableMenu" asp-controller="Kiosk" asp-area="Customer" asp-route-tableNumber="@Model.TableNumber" class="btn-primary" style="text-decoration: none; background: #F39C12;">
+                <i class="bi bi-arrow-repeat"></i> Reorder (Table @Model.TableNumber)
+            </a>
         }
         <a asp-action="Index" asp-controller="Kiosk" asp-area="Customer" class="btn-primary" style="text-decoration: none;">
             <i class="bi bi-house"></i> New Order

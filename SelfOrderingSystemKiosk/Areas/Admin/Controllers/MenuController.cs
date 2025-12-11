@@ -6,7 +6,7 @@ using SelfOrderingSystemKiosk.Services;
 namespace SelfOrderingSystemKiosk.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Kitchen")]
     public class MenuController : Controller
     {
         private readonly StockService _stockService;

@@ -20,6 +20,20 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
 
         public IActionResult Index() => View();
 
+        // QR Code route - redirects to menu with table number
+        public IActionResult TableMenu([FromQuery] string tableNumber)
+        {
+            if (string.IsNullOrEmpty(tableNumber))
+            {
+                return RedirectToAction("Index");
+            }
+
+            // Set table number in TempData and redirect to experience selection
+            TempData["TableNumber"] = tableNumber;
+            TempData["DiningType"] = "DineIn"; // Table orders are always Dine In
+            return RedirectToAction("ChooseExperience");
+        }
+
         [HttpPost]
         public IActionResult SelectDining(string diningType)
         {
@@ -38,6 +52,12 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         public IActionResult ChooseExperience()
         {
             ViewBag.DiningType = TempData["DiningType"];
+            ViewBag.TableNumber = TempData["TableNumber"];
+            // Keep table number in TempData for next request
+            if (TempData["TableNumber"] != null)
+            {
+                TempData.Keep("TableNumber");
+            }
             return View();
         }
 
@@ -45,24 +65,47 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         public IActionResult SelectExperience(string experienceType)
         {
             TempData["ExperienceType"] = experienceType;
+            // Preserve table number if it exists
+            if (TempData["TableNumber"] != null)
+            {
+                TempData.Keep("TableNumber");
+            }
             if (experienceType == "Unlimited") return RedirectToAction("UnlimitedMenu");
             if (experienceType == "AlaCarte") return RedirectToAction("AlaCarteMenu");
             return RedirectToAction("ChooseExperience");
         }
 
-        public async Task<IActionResult> AlaCarteMenu()
+        public async Task<IActionResult> AlaCarteMenu(string tableNumber = null)
         {
             TempData.Keep("ExperienceType"); // Keep it for the next request
+            if (!string.IsNullOrEmpty(tableNumber))
+            {
+                TempData["TableNumber"] = tableNumber;
+            }
+            else if (TempData["TableNumber"] != null)
+            {
+                TempData.Keep("TableNumber"); // Keep table number if it exists
+            }
             ViewBag.ExperienceType = "AlaCarte";
+            ViewBag.TableNumber = tableNumber ?? TempData["TableNumber"]?.ToString();
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
             return View(items);
         }
 
-        public async Task<IActionResult> UnlimitedMenu()
+        public async Task<IActionResult> UnlimitedMenu(string tableNumber = null)
         {
             TempData.Keep("ExperienceType"); // Keep it for the next request
+            if (!string.IsNullOrEmpty(tableNumber))
+            {
+                TempData["TableNumber"] = tableNumber;
+            }
+            else if (TempData["TableNumber"] != null)
+            {
+                TempData.Keep("TableNumber"); // Keep table number if it exists
+            }
             ViewBag.ExperienceType = "Unlimited";
+            ViewBag.TableNumber = tableNumber ?? TempData["TableNumber"]?.ToString();
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
             return View(items);
@@ -83,6 +126,17 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
 
                 // Get orderType from TempData if not in query string
                 string experienceType = orderType ?? TempData["ExperienceType"]?.ToString() ?? "AlaCarte";
+
+                // Validate quantity limit for Ala Carte orders (max 5 per item)
+                if (experienceType == "AlaCarte")
+                {
+                    var itemsExceedingLimit = Items.Where(i => i.Quantity > 5).ToList();
+                    if (itemsExceedingLimit.Any())
+                    {
+                        var itemNames = string.Join(", ", itemsExceedingLimit.Select(i => i.ItemName));
+                        return Json(new { success = false, message = $"Maximum quantity of 5 per item allowed. The following items exceed this limit: {itemNames}" });
+                    }
+                }
 
                 decimal subtotal;
                 decimal tax;
@@ -107,8 +161,15 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                 var random = new Random();
                 string orderNumber = random.Next(1000, 9999).ToString();
 
-                // Get dining type from TempData
+                // Get dining type and table number from TempData
                 string diningType = TempData["DiningType"]?.ToString() ?? "DineIn";
+                string tableNumber = TempData["TableNumber"]?.ToString();
+                
+                // Keep table number in TempData in case user wants to reorder
+                if (!string.IsNullOrEmpty(tableNumber))
+                {
+                    TempData.Keep("TableNumber");
+                }
 
                 var order = new Order
                 {
@@ -117,6 +178,7 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                     Status = "Pending",
                     OrderType = experienceType, // ✅ Store the order type (AlaCarte/Unlimited)
                     DiningType = diningType, // ✅ Store the dining type (DineIn/TakeOut)
+                    TableNumber = tableNumber, // ✅ Store the table number if available
                     Subtotal = subtotal,
                     Tax = tax,
                     Total = total,

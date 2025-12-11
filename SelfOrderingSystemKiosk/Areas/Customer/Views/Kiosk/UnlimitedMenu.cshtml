@@ -23,6 +23,13 @@
             <div class="menu-header">
                 <h1>CHICKEN WINGS MENU</h1>
                 <p>Endless Wings — ₱377 per head</p>
+                @if (ViewBag.TableNumber != null)
+                {
+                    <div style="background: #fff3e6; border: 2px solid #e67e22; border-radius: 10px; padding: 10px 15px; margin: 15px 0; display: inline-block;">
+                        <i class="bi bi-table" style="color: #d35400; margin-right: 5px;"></i>
+                        <strong style="color: #d35400;">Table @ViewBag.TableNumber</strong>
+                    </div>
+                }
                 <h2 style="margin-top:20px;">UNLIMITED MENU</h2>
                 <p>Choose from our delicious selection of flavorful chicken wings</p>
             </div>

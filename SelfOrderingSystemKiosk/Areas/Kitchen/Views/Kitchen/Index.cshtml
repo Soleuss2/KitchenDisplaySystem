@@ -436,7 +436,22 @@
                             <span style="background: @(order.OrderType == "Unlimited" ? "#9C27B0" : "#FF5722"); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-right: 8px;">
                                 @(order.OrderType ?? "AlaCarte")
                             </span>
-                            Table @order.OrderNumber.Last() • Dine in
+                            @{
+                                var diningType = order.DiningType ?? "DineIn";
+                                var isTakeOut = diningType == "TakeOut";
+                                var diningTypeText = isTakeOut ? "Take Out" : "Dine In";
+                                var diningTypeColor = isTakeOut ? "#E74C3C" : "#3498DB";
+                                var diningTypeIcon = isTakeOut ? "bi-box-arrow-up-right" : "bi-house-door";
+                            }
+                            <span style="background: @diningTypeColor; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-right: 8px;">
+                                <i class="bi @diningTypeIcon" style="font-size: 0.9em;"></i> @diningTypeText
+                            </span>
+                            @if (!string.IsNullOrEmpty(order.TableNumber))
+                            {
+                                <span style="background: #F39C12; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="bi bi-table" style="font-size: 0.9em;"></i> Table @order.TableNumber
+                                </span>
+                            }
                         </div>
                     </div>
                     <div class="order-time">

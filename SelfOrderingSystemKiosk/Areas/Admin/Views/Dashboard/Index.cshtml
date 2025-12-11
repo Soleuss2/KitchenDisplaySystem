@@ -1,13 +1,12 @@
 ﻿@{
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
-    var labelsJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Labels);
-    var valuesJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Values);
     var todayRevenue = ViewBag.TodaysRevenue != null ? (decimal)ViewBag.TodaysRevenue : 0m;
     var todayRevenueDineIn = ViewBag.TodaysRevenueDineIn != null ? (decimal)ViewBag.TodaysRevenueDineIn : 0m;
     var todayRevenueTakeOut = ViewBag.TodaysRevenueTakeOut != null ? (decimal)ViewBag.TodaysRevenueTakeOut : 0m;
     var lowStockItemsList = ViewBag.LowStockList as List<SelfOrderingSystemKiosk.Models.InventoryItem> ?? new List<SelfOrderingSystemKiosk.Models.InventoryItem>();
     var bestSellersAll = ViewBag.BestSellersAllTime as List<SelfOrderingSystemKiosk.Controllers.BestSeller> ?? new List<SelfOrderingSystemKiosk.Controllers.BestSeller>();
     var bestSellersToday = ViewBag.BestSellersToday as List<SelfOrderingSystemKiosk.Controllers.BestSeller> ?? new List<SelfOrderingSystemKiosk.Controllers.BestSeller>();
+    var bestSellersMonthly = ViewBag.BestSellersMonthly as List<SelfOrderingSystemKiosk.Controllers.BestSeller> ?? new List<SelfOrderingSystemKiosk.Controllers.BestSeller>();
     var todayRevenueAlaCarte = ViewBag.TodaysRevenueAlaCarte != null ? (decimal)ViewBag.TodaysRevenueAlaCarte : 0m;
     var todayRevenueUnlimited = ViewBag.TodaysRevenueUnlimited != null ? (decimal)ViewBag.TodaysRevenueUnlimited : 0m;
     var rangeStart = ViewBag.RangeStart != null ? ((DateTime)ViewBag.RangeStart).ToLocalTime() : DateTime.UtcNow.ToLocalTime().Date;
@@ -18,6 +17,9 @@
     var rangeRevenueDineIn = ViewBag.RangeRevenueDineIn != null ? (decimal)ViewBag.RangeRevenueDineIn : 0m;
     var rangeRevenueTakeOut = ViewBag.RangeRevenueTakeOut != null ? (decimal)ViewBag.RangeRevenueTakeOut : 0m;
     var rangeOrderCount = ViewBag.RangeOrderCount != null ? (int)ViewBag.RangeOrderCount : 0;
+    var chartData = ViewBag.ChartData as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
+    var chartLabelsJson = System.Text.Json.JsonSerializer.Serialize(chartData.Keys.OrderBy(k => k).Select(k => DateTime.Parse(k).ToString("MMM dd")).ToList());
+    var chartValuesJson = System.Text.Json.JsonSerializer.Serialize(chartData.Keys.OrderBy(k => k).Select(k => chartData[k]).ToList());
 }
 
 <div class="dashboard-container">
@@ -64,119 +66,20 @@
         </div>
     </div>
 
-    <!-- Sales Summary with Filters -->
-    <div class="sales-summary-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 20px;">
-            <h2 style="color: #e67e22; margin: 0; display: flex; align-items: center; gap: 10px;"><i class="bi bi-graph-up"></i> <span>Sales Summary</span></h2>
+    <!-- Revenue Analytics Section -->
+    <div class="revenue-analytics-section" style="margin-top: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: #e67e22; margin: 0; display: flex; align-items: center; gap: 10px;"><i class="bi bi-graph-up"></i> <span>Revenue Analytics</span></h2>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <button class="sales-filter-btn active" data-filter="week" onclick="filterSales('week')">Week</button>
-                <button class="sales-filter-btn" data-filter="month" onclick="filterSales('month')">Month</button>
-                <button class="sales-filter-btn" data-filter="year" onclick="filterSales('year')">Year</button>
-                <button class="sales-filter-btn" data-filter="today" onclick="filterSales('today')">Today's Sales</button>
-                <button class="sales-filter-btn date-range-btn" onclick="openDateRangePopup()" style="display: flex; align-items: center; gap: 6px;">
+                @{
+                    var hasCustomRange = ViewBag.HasCustomRange != null && (bool)ViewBag.HasCustomRange;
+                }
+                <button class="sales-filter-btn @(!hasCustomRange ? "active" : "")" data-filter="week" onclick="filterChart('week')">This Week</button>
+                <button class="sales-filter-btn @(!hasCustomRange ? "" : "")" data-filter="month" onclick="filterChart('month')">This Month</button>
+                <button class="sales-filter-btn @(!hasCustomRange ? "" : "")" data-filter="year" onclick="filterChart('year')">This Year</button>
+                <button class="sales-filter-btn date-range-btn @(hasCustomRange ? "active" : "")" onclick="openDateRangePopup()" style="display: flex; align-items: center; gap: 6px;">
                     <i class="bi bi-calendar-range"></i> <span>Custom Range</span>
                 </button>
-            </div>
-        </div>
-        
-        <!-- Weekly Sales Summary -->
-        <div id="weekly-sales" class="sales-summary-container" style="display: block;">
-            @if (ViewBag.WeeklySales != null && ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.WeeklySales).Any())
-            {
-                @foreach (var weekData in ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.WeeklySales).OrderByDescending(x => x.Key))
-                {
-                    var weekStart = DateTime.Parse(weekData.Key);
-                    var weekEnd = weekStart.AddDays(6);
-                    <div class="sales-card">
-                        <h3>Week of @weekStart.ToString("MMM dd") - @weekEnd.ToString("MMM dd, yyyy")</h3>
-                        <div class="sales-stat">
-                            <span class="sales-label">Orders:</span>
-                            <span class="sales-value">@weekData.Value.Count</span>
-                        </div>
-                        <div class="sales-stat">
-                            <span class="sales-label">Revenue:</span>
-                            <span class="sales-value revenue">₱@weekData.Value.Revenue.ToString("N2")</span>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <p class="lowstock-empty">No weekly sales data available.</p>
-            }
-        </div>
-
-        <!-- Monthly Sales Summary -->
-        <div id="monthly-sales" class="sales-summary-container" style="display: none;">
-            @if (ViewBag.MonthlySales != null && ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.MonthlySales).Any())
-            {
-                @foreach (var monthData in ((Dictionary<string, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.MonthlySales).OrderByDescending(x => x.Key))
-                {
-                    var date = DateTime.Parse(monthData.Key + "-01");
-                    <div class="sales-card">
-                        <h3>@date.ToString("MMMM yyyy")</h3>
-                        <div class="sales-stat">
-                            <span class="sales-label">Orders:</span>
-                            <span class="sales-value">@monthData.Value.Count</span>
-                        </div>
-                        <div class="sales-stat">
-                            <span class="sales-label">Revenue:</span>
-                            <span class="sales-value revenue">₱@monthData.Value.Revenue.ToString("N2")</span>
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-
-        <!-- Yearly Sales Summary -->
-        <div id="yearly-sales" class="sales-summary-container" style="display: none;">
-            @if (ViewBag.YearlySales != null && ((Dictionary<int, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.YearlySales).Any())
-            {
-                @foreach (var yearData in ((Dictionary<int, SelfOrderingSystemKiosk.Controllers.SalesData>)ViewBag.YearlySales).OrderByDescending(x => x.Key))
-                {
-                    <div class="sales-card">
-                        <h3>@yearData.Key</h3>
-                        <div class="sales-stat">
-                            <span class="sales-label">Orders:</span>
-                            <span class="sales-value">@yearData.Value.Count</span>
-                        </div>
-                        <div class="sales-stat">
-                            <span class="sales-label">Revenue:</span>
-                            <span class="sales-value revenue">₱@yearData.Value.Revenue.ToString("N2")</span>
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-
-        <!-- Today's Sales Detail -->
-        <div id="today-sales" class="sales-summary-container" style="display: none;">
-            <div class="sales-card highlight-card">
-                <h3>Today (@DateTime.UtcNow.ToLocalTime().ToString("MMM dd, yyyy"))</h3>
-                <div class="sales-stat">
-                    <span class="sales-label">Orders:</span>
-                    <span class="sales-value">@ViewBag.TodaysSales</span>
-                </div>
-                <div class="sales-stat">
-                    <span class="sales-label">Revenue:</span>
-                    <span class="sales-value revenue" style="font-size: 1.3em;">₱@todayRevenue.ToString("N2")</span>
-                </div>
-                <div class="sales-stat">
-                    <span class="sales-label">Ala Carte:</span>
-                    <span class="sales-value">₱@todayRevenueAlaCarte.ToString("N2")</span>
-                </div>
-                <div class="sales-stat">
-                    <span class="sales-label">Unlimited:</span>
-                    <span class="sales-value">₱@todayRevenueUnlimited.ToString("N2")</span>
-                </div>
-                <div class="sales-stat">
-                    <span class="sales-label">Dine In:</span>
-                    <span class="sales-value" style="color: #3498db;">₱@todayRevenueDineIn.ToString("N2")</span>
-                </div>
-                <div class="sales-stat">
-                    <span class="sales-label">Take Out:</span>
-                    <span class="sales-value" style="color: #e74c3c;">₱@todayRevenueTakeOut.ToString("N2")</span>
-                </div>
             </div>
         </div>
     </div>
@@ -218,9 +121,14 @@
         </div>
     </div>
 
-    <!-- Chart -->
+    <!-- Revenue Chart -->
     <div class="chart-container">
-        <canvas id="statsChart"></canvas>
+        <h3 style="text-align: center; color: #e67e22; margin-bottom: 15px; font-size: 1.1em;">
+            Revenue Chart (@rangeStart.ToString("MMM dd, yyyy") - @rangeEnd.ToString("MMM dd, yyyy"))
+        </h3>
+        <div style="width: 100%; height: 350px; position: relative;">
+            <canvas id="revenueChart"></canvas>
+        </div>
     </div>
 
     <!-- Best Sellers Modal -->
@@ -233,6 +141,7 @@
             <div class="lowstock-modal-body">
                 <div class="best-seller-filters" style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
                     <button class="sales-filter-btn active" data-bs-filter="all" onclick="filterBestSellers('all')">All Time</button>
+                    <button class="sales-filter-btn" data-bs-filter="month" onclick="filterBestSellers('month')">This Month</button>
                     <button class="sales-filter-btn" data-bs-filter="today" onclick="filterBestSellers('today')">Today</button>
                 </div>
                 <span class="best-sellers-sub" style="display: block; text-align: center; margin-bottom: 15px;">Top 5 by quantity</span>
@@ -254,6 +163,26 @@
                     else
                     {
                         <p class="lowstock-empty">No sales yet to rank best sellers.</p>
+                    }
+                </div>
+
+                <div id="best-sellers-month" class="best-sellers-list" style="display: none; flex-direction: column;">
+                    @if (bestSellersMonthly.Any())
+                    {
+                        @foreach (var item in bestSellersMonthly)
+                        {
+                            <div class="best-seller-row">
+                                <div class="best-seller-name">@item.ItemName</div>
+                                <div class="best-seller-meta">
+                                    <span class="pill warning">Sold: @item.Quantity</span>
+                                    <span class="pill muted">₱@item.Revenue.ToString("N2")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="lowstock-empty">No sales this month yet to rank best sellers.</p>
                     }
                 </div>
 
@@ -299,6 +228,10 @@
                                     <span class="pill warning">Stock: @item.CurrentStock</span>
                                     <span class="pill muted">Reorder at @item.ReorderLevel</span>
                                 </div>
+                                <div class="lowstock-actions" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                                    <input type="number" id="restock-qty-@item.Id" min="1" value="10" style="width: 80px; padding: 6px; border: 1px solid #f0d7bf; border-radius: 6px; font-size: 0.9em;" />
+                                    <button class="btn-restock" onclick="restockItem('@item.Id', '@item.Item')" style="padding: 6px 12px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 600;">Restock</button>
+                                </div>
                             </div>
                         }
                     </div>
@@ -315,78 +248,152 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const ctx = document.getElementById('statsChart');
+        const ctx = document.getElementById('revenueChart');
+        let revenueChart;
 
-        // Revenue Chart Data
-        const revenueLabels = ['Today', 'This Week', 'This Month', 'This Year'];
-        const revenueData = [
-            @todayRevenue,
-            @(ViewBag.WeeklyRevenue ?? 0m),
-            @(ViewBag.MonthlyRevenue ?? 0m),
-            @(ViewBag.YearlyRevenue ?? 0m)
-        ];
+        // Initialize chart with current data
+        const chartLabels = @Html.Raw(chartLabelsJson);
+        const chartValues = @Html.Raw(chartValuesJson);
 
-        const statsChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: revenueLabels,
-                datasets: [{
-                    label: 'Revenue (₱)',
-                    data: revenueData,
-                    backgroundColor: [
-                        'rgba(46, 204, 113, 0.7)',
-                        'rgba(52, 152, 219, 0.7)',
-                        'rgba(241, 196, 15, 0.7)',
-                        'rgba(230, 126, 34, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(46, 204, 113, 1)',
-                        'rgba(52, 152, 219, 1)',
-                        'rgba(241, 196, 15, 1)',
-                        'rgba(230, 126, 34, 1)'
-                    ],
-                    borderWidth: 2,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: { 
-                            color: '#333',
-                            callback: function(value) {
-                                return '₱' + value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        function initChart(labels, values) {
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+
+            revenueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue (₱)',
+                        data: values,
+                        backgroundColor: 'rgba(230, 126, 34, 0.7)',
+                        borderColor: 'rgba(230, 126, 34, 1)',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 10,
+                            bottom: 10,
+                            left: 10,
+                            right: 10
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                color: '#333',
+                                font: {
+                                    size: 11
+                                },
+                                maxTicksLimit: 8,
+                                callback: function(value) {
+                                    if (value >= 1000) {
+                                        return '₱' + (value / 1000).toFixed(1) + 'k';
+                                    }
+                                    return '₱' + value.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                                }
+                            },
+                            grid: { 
+                                color: 'rgba(0,0,0,0.05)',
+                                drawBorder: false
                             }
                         },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
+                        x: {
+                            ticks: { 
+                                color: '#333',
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 45,
+                                minRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            },
+                            grid: { 
+                                color: 'rgba(0,0,0,0.05)',
+                                display: false
+                            }
+                        }
                     },
-                    y: {
-                        ticks: { color: '#333' },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: '#fff',
-                        borderColor: '#ccc',
-                        borderWidth: 1,
-                        titleColor: '#333',
-                        bodyColor: '#333',
-                        callbacks: {
-                            label: function(context) {
-                                return 'Revenue: ₱' + context.parsed.x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#fff',
+                            borderColor: '#ccc',
+                            borderWidth: 1,
+                            titleColor: '#333',
+                            bodyColor: '#333',
+                            titleFont: {
+                                size: 12
+                            },
+                            bodyFont: {
+                                size: 12
+                            },
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Revenue: ₱' + context.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                }
                             }
                         }
                     }
                 }
+            });
+        }
+
+        // Initialize chart on page load
+        initChart(chartLabels, chartValues);
+
+        function filterChart(filterType) {
+            // Remove active class from all buttons
+            document.querySelectorAll('.sales-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Add active class to clicked button
+            const activeBtn = document.querySelector(`[data-filter="${filterType}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Reload page with filter parameter
+            const url = new URL(window.location.href);
+            url.searchParams.delete('startDate');
+            url.searchParams.delete('endDate');
+            
+            if (filterType !== 'today') {
+                const today = new Date();
+                let startDate, endDate;
+                
+                if (filterType === 'week') {
+                    const dayOfWeek = today.getDay();
+                    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                    startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+                    endDate = new Date(startDate);
+                    endDate.setDate(endDate.getDate() + 6);
+                } else if (filterType === 'month') {
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                } else if (filterType === 'year') {
+                    startDate = new Date(today.getFullYear(), 0, 1);
+                    endDate = new Date(today.getFullYear(), 11, 31);
+                }
+                
+                if (startDate && endDate) {
+                    url.searchParams.set('startDate', startDate.toISOString().split('T')[0]);
+                    url.searchParams.set('endDate', endDate.toISOString().split('T')[0]);
+                }
             }
-        });
+            
+            window.location.href = url.toString();
+        }
 
         const lowStockModal = document.getElementById('lowStockModal');
 
@@ -418,15 +425,22 @@
 
         function filterBestSellers(filterType) {
             const allList = document.getElementById('best-sellers-all');
+            const monthList = document.getElementById('best-sellers-month');
             const todayList = document.getElementById('best-sellers-today');
             const buttons = document.querySelectorAll('.best-seller-filters .sales-filter-btn');
 
+            // Hide all lists
+            allList.style.display = 'none';
+            monthList.style.display = 'none';
+            todayList.style.display = 'none';
+
+            // Show selected list
             if (filterType === 'today') {
-                allList.style.display = 'none';
                 todayList.style.display = 'flex';
+            } else if (filterType === 'month') {
+                monthList.style.display = 'flex';
             } else {
                 allList.style.display = 'flex';
-                todayList.style.display = 'none';
             }
 
             buttons.forEach(btn => btn.classList.remove('active'));
@@ -434,38 +448,42 @@
             if (activeBtn) activeBtn.classList.add('active');
         }
 
-        function filterSales(filterType) {
-            // Hide all sales containers
-            const weeklySales = document.getElementById('weekly-sales');
-            const monthlySales = document.getElementById('monthly-sales');
-            const yearlySales = document.getElementById('yearly-sales');
-            const todaySales = document.getElementById('today-sales');
-            
-            if (weeklySales) weeklySales.style.display = 'none';
-            if (monthlySales) monthlySales.style.display = 'none';
-            if (yearlySales) yearlySales.style.display = 'none';
-            if (todaySales) todaySales.style.display = 'none';
+        async function restockItem(itemId, itemName) {
+            const quantityInput = document.getElementById('restock-qty-' + itemId);
+            const quantity = parseInt(quantityInput.value);
 
-            // Remove active class from all buttons
-            document.querySelectorAll('.sales-filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Show selected container and activate button
-            if (filterType === 'week') {
-                if (weeklySales) weeklySales.style.display = 'grid';
-            } else if (filterType === 'month') {
-                if (monthlySales) monthlySales.style.display = 'grid';
-            } else if (filterType === 'year') {
-                if (yearlySales) yearlySales.style.display = 'grid';
-            } else if (filterType === 'today') {
-                if (todaySales) todaySales.style.display = 'grid';
+            if (!quantity || quantity <= 0) {
+                alert('Please enter a valid quantity greater than 0.');
+                return;
             }
 
-            // Add active class to clicked button
-            const activeBtn = document.querySelector(`[data-filter="${filterType}"]`);
-            if (activeBtn) activeBtn.classList.add('active');
+            if (!confirm(`Restock ${itemName} by ${quantity} units?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('@Url.Action("RestockItem", "Dashboard")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `id=${encodeURIComponent(itemId)}&quantity=${quantity}`
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    // Reload the page to refresh the low stock list
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error restocking item: ' + error.message);
+            }
         }
+
 
         // Best Sellers Modal Functions
         const bestSellersModal = document.getElementById('bestSellersModal');

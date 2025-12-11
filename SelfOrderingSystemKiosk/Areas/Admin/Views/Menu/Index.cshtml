@@ -5,10 +5,9 @@
 }
 
 <div class="content">
-    <div class="header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
         <div>
-            <h1 style="display: flex; align-items: center; gap: 12px;"><i class="bi bi-clipboard-data"></i> <span>Menu & Inventory Management</span></h1>
-            <p>Manage menu items, inventory, prices, and availability all in one place.</p>
+            <p style="margin-top: 0;">Manage menu items, inventory, prices, and availability all in one place.</p>
             <p style="color: #666; font-size: 0.9em; margin-top: 5px;">
                 <i class="bi bi-info-circle"></i> Showing items from MongoDB Stock collection.
             </p>
@@ -371,11 +370,16 @@
     }
 
     // Close modal when clicking outside
-    document.getElementById('addItemModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeAddModal();
+    function setupAddModal() {
+        const addModal = document.getElementById('addItemModal');
+        if (addModal) {
+            addModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAddModal();
+                }
+            });
         }
-    });
+    }
 
     // Close modal on ESC key
     document.addEventListener('keydown', function(e) {
@@ -507,10 +511,34 @@
     }
 
     // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupEditModal);
-    } else {
+    function initializeModals() {
+        setupAddModal();
         setupEditModal();
+        
+        // Setup form submission handlers
+        const addForm = document.getElementById('addItemForm');
+        if (addForm) {
+            addForm.addEventListener('submit', function() {
+                setTimeout(function() {
+                    closeAddModal();
+                }, 100);
+            });
+        }
+        
+        const editForm = document.getElementById('editItemForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function() {
+                setTimeout(function() {
+                    closeEditModal();
+                }, 100);
+            });
+        }
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeModals);
+    } else {
+        initializeModals();
     }
 </script>
 
@@ -592,22 +620,6 @@
     </div>
 </div>
 
-<script>
-    // Close modal after successful form submission
-    document.getElementById('addItemForm').addEventListener('submit', function() {
-        // Modal will close after redirect, but we can also close it immediately for better UX
-        setTimeout(function() {
-            closeAddModal();
-        }, 100);
-    });
-
-    // Close edit modal after successful form submission
-    document.getElementById('editItemForm').addEventListener('submit', function() {
-        setTimeout(function() {
-            closeEditModal();
-        }, 100);
-    });
-</script>
 
 <!-- Edit Item Modal -->
 <div class="modal-overlay" id="editItemModal">

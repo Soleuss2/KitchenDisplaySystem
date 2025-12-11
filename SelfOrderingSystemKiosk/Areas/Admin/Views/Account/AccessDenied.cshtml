@@ -1,0 +1,32 @@
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - KDS Admin</title>
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2 class="auth-title">🚫 Access Denied</h2>
+            <div style="text-align: center; padding: 20px 0;">
+                <p style="color: #666; margin-bottom: 20px;">
+                    You don't have permission to access this page.
+                </p>
+                <p style="color: #888; font-size: 0.9em; margin-bottom: 30px;">
+                    Please contact your administrator if you believe this is an error.
+                </p>
+                <div class="auth-links">
+                    <a asp-action="Login" asp-controller="Account">← Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

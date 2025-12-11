@@ -23,7 +23,13 @@
             <div class="menu-header">
                 <h1>CHICKEN WINGS MENU</h1>
                 <p>Order your favorite dishes with ease</p>
-
+                @if (ViewBag.TableNumber != null)
+                {
+                    <div style="background: #fff3e6; border: 2px solid #e67e22; border-radius: 10px; padding: 10px 15px; margin: 15px 0; display: inline-block;">
+                        <i class="bi bi-table" style="color: #d35400; margin-right: 5px;"></i>
+                        <strong style="color: #d35400;">Table @ViewBag.TableNumber</strong>
+                    </div>
+                }
                 <h2 style="margin-top:20px;">ALA CARTE MENU</h2>
                 <p>Pick and enjoy our flavorful chicken wings and special sides</p>
             </div>
@@ -124,6 +130,11 @@
             const existingItem = cart.find(item => item.name === name);
 
             if (existingItem) {
+                // Limit quantity to 5 per item for ala carte
+                if (existingItem.quantity >= 5) {
+                    alert(`Maximum quantity of 5 per item allowed. You already have ${existingItem.quantity} of ${name} in your cart.`);
+                    return;
+                }
                 existingItem.quantity += 1;
             } else {
                 cart.push({
@@ -169,16 +180,20 @@
         cart.forEach((item, index) => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'cart-item';
+            const isMaxQuantity = item.quantity >= 5;
+            const plusButtonDisabled = isMaxQuantity ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : '';
+            const maxQuantityIndicator = isMaxQuantity ? '<small style="color:#e74c3c;font-size:0.75em;display:block;">Max: 5</small>' : '';
             itemDiv.innerHTML = `
                 <img src="${item.image}" alt="${item.name}" style="width:50px;height:50px;object-fit:cover;border-radius:8px;">
                 <div style="flex:1;margin-left:10px;">
                     <h5 style="margin:0;font-size:14px;">${item.name}</h5>
                     <p style="margin:0;color:#666;">₱${item.price.toFixed(2)}</p>
+                    ${maxQuantityIndicator}
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <button class="qty-btn minus" data-index="${index}">-</button>
                     <span class="qty">${item.quantity}</span>
-                    <button class="qty-btn plus" data-index="${index}">+</button>
+                    <button class="qty-btn plus" data-index="${index}" ${plusButtonDisabled}>+</button>
                     <button class="remove-btn" data-index="${index}">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -200,7 +215,16 @@
     function addCartEventListeners() {
         document.querySelectorAll('.qty-btn.plus').forEach(btn => {
             btn.addEventListener('click', function() {
+                // Don't process if button is disabled
+                if (this.disabled) {
+                    return;
+                }
                 const index = parseInt(this.getAttribute('data-index'));
+                // Limit quantity to 5 per item for ala carte
+                if (cart[index].quantity >= 5) {
+                    alert(`Maximum quantity of 5 per item allowed. You already have ${cart[index].quantity} of ${cart[index].name} in your cart.`);
+                    return;
+                }
                 cart[index].quantity += 1;
                 updateCartDisplay();
             });
@@ -232,6 +256,13 @@
 
         if (cart.length === 0) {
             alert('Please add items to your cart first!');
+            return;
+        }
+
+        // Validate quantities before submitting (max 5 per item for ala carte)
+        const invalidItems = cart.filter(item => item.quantity > 5);
+        if (invalidItems.length > 0) {
+            alert('Some items exceed the maximum quantity of 5 per item. Please adjust your order.');
             return;
         }
 
