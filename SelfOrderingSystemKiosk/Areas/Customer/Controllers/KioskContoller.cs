@@ -171,6 +171,29 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                     TempData.Keep("TableNumber");
                 }
 
+                // Check 1-hour time limit for DineIn table orders
+                if (!string.IsNullOrEmpty(tableNumber) && diningType == "DineIn")
+                {
+                    var existingOrders = await _orderService.GetOrdersByTableAsync(tableNumber);
+                    
+                    if (existingOrders.Any())
+                    {
+                        // Not the first order - check if 1 hour has passed since first order
+                        var firstOrder = existingOrders.OrderBy(o => o.OrderDate).First();
+                        var timeSinceFirstOrder = DateTime.UtcNow - firstOrder.OrderDate;
+                        var oneHour = TimeSpan.FromHours(1);
+                        
+                        if (timeSinceFirstOrder > oneHour)
+                        {
+                            return Json(new { 
+                                success = false, 
+                                message = $"Time limit exceeded. This table's 1-hour session started at {firstOrder.OrderDate:hh:mm tt} and has expired. Please contact staff for assistance." 
+                            });
+                        }
+                    }
+                    // If it's the first order, allow it (timer starts now)
+                }
+
                 var order = new Order
                 {
                     OrderNumber = orderNumber,
@@ -242,6 +265,39 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
 
             // Order found, redirect to confirmation page
             return RedirectToAction("Confirmation", new { orderNumber = orderNumber });
+        }
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> GetTableSessionInfo([FromQuery] string tableNumber)
+        {
+            if (string.IsNullOrEmpty(tableNumber))
+            {
+                return Json(new { hasSession = false });
+            }
+
+            var existingOrders = await _orderService.GetOrdersByTableAsync(tableNumber);
+            
+            if (!existingOrders.Any())
+            {
+                return Json(new { hasSession = false });
+            }
+
+            var firstOrder = existingOrders.OrderBy(o => o.OrderDate).First();
+            var timeSinceFirstOrder = DateTime.UtcNow - firstOrder.OrderDate;
+            var oneHour = TimeSpan.FromHours(1);
+            var timeRemaining = oneHour - timeSinceFirstOrder;
+            var isExpired = timeRemaining <= TimeSpan.Zero;
+
+            return Json(new
+            {
+                hasSession = true,
+                firstOrderTime = firstOrder.OrderDate,
+                timeRemainingSeconds = isExpired ? 0 : (int)timeRemaining.TotalSeconds,
+                timeRemainingMinutes = isExpired ? 0 : (int)timeRemaining.TotalMinutes,
+                isExpired = isExpired,
+                timeRemainingFormatted = isExpired ? "00:00" : $"{(int)timeRemaining.TotalMinutes:D2}:{timeRemaining.Seconds:D2}"
+            });
         }
 
         [HttpPost]

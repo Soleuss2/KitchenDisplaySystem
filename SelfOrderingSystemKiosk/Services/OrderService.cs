@@ -78,5 +78,37 @@ namespace SelfOrderingSystemKiosk.Services
             var update = Builders<Order>.Update.Set(o => o.Status, "Canceled");
             await _orders.UpdateOneAsync(o => o.OrderNumber == orderNumber, update);
         }
+
+        // Get first order for a table (to track when 1-hour timer starts)
+        public async Task<Order> GetFirstOrderByTableAsync(string tableNumber)
+        {
+            if (string.IsNullOrEmpty(tableNumber))
+                return null;
+
+            // Get the earliest order for this table that is not canceled
+            var orders = await _orders
+                .Find(o => o.TableNumber == tableNumber && 
+                          o.Status != "Canceled" && 
+                          o.DiningType == "DineIn")
+                .SortBy(o => o.OrderDate)
+                .Limit(1)
+                .ToListAsync();
+
+            return orders.FirstOrDefault();
+        }
+
+        // Get all orders for a table (for checking if table has any orders)
+        public async Task<List<Order>> GetOrdersByTableAsync(string tableNumber)
+        {
+            if (string.IsNullOrEmpty(tableNumber))
+                return new List<Order>();
+
+            return await _orders
+                .Find(o => o.TableNumber == tableNumber && 
+                          o.Status != "Canceled" && 
+                          o.DiningType == "DineIn")
+                .SortBy(o => o.OrderDate)
+                .ToListAsync();
+        }
     }
 }

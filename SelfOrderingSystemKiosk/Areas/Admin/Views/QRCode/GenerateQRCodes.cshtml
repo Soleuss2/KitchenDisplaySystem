@@ -19,8 +19,8 @@
                 <p style="color: #666; font-size: 0.9em; margin-bottom: 20px;">
                     Click to view and print QR code
                 </p>
-                <button onclick="showQRCode(@tableNum)" class="btn btn-edit" style="width: 100%; padding: 12px;">
-                    <i class="bi bi-qr-code"></i> Show QR Code
+                <button onclick="showQRCode(@tableNum)" class="btn btn-edit qr-show-btn" style="width: 100%; padding: 12px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="bi bi-qr-code"></i> <span>Show QR Code</span>
                 </button>
             </div>
         }
@@ -38,8 +38,8 @@
                     <div style="color: #999; font-size: 0.9em;">Generating QR code...</div>
                 </div>
                 <div style="text-align: center; margin-top: 20px;">
-                    <button onclick="printCurrentQRCode()" class="btn btn-edit" style="padding: 12px 25px;">
-                        <i class="bi bi-printer"></i> Print QR Code
+                    <button onclick="printCurrentQRCode()" class="btn btn-edit qr-print-btn" style="padding: 12px 25px; font-size: 1rem; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-printer"></i> <span>Print QR Code</span>
                     </button>
                 </div>
             </div>

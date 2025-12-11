@@ -690,6 +690,40 @@ button {
     text-align: center;
 }
 
+/* QR Code page button styling */
+.qr-show-btn,
+.qr-print-btn {
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qr-show-btn:hover,
+.qr-print-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+}
+
+.qr-show-btn:active,
+.qr-print-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+}
+
+.qr-show-btn i,
+.qr-print-btn i {
+    font-size: 1.1em;
+}
+
+.qr-show-btn span,
+.qr-print-btn span {
+    font-weight: 600;
+}
+
 .lowstock-modal-content {
     background: #fffaf5;
     border: 2px solid #f0d7bf;
