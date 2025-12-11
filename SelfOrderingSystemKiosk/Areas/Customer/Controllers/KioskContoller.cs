@@ -18,21 +18,13 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             _stockService = stockService;
         }
 
-        public IActionResult Index() => View();
-
-        // QR Code route - redirects to menu with table number
-        public IActionResult TableMenu([FromQuery] string tableNumber)
+        public IActionResult Index()
         {
-            if (string.IsNullOrEmpty(tableNumber))
-            {
-                return RedirectToAction("Index");
-            }
-
-            // Set table number in TempData and redirect to experience selection
-            TempData["TableNumber"] = tableNumber;
-            TempData["DiningType"] = "DineIn"; // Table orders are always Dine In
-            return RedirectToAction("ChooseExperience");
+            // Clear session when starting a new order (new session starts)
+            HttpContext.Session.Remove("FirstOrderTime");
+            return View();
         }
+
 
         [HttpPost]
         public IActionResult SelectDining(string diningType)
@@ -52,12 +44,6 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         public IActionResult ChooseExperience()
         {
             ViewBag.DiningType = TempData["DiningType"];
-            ViewBag.TableNumber = TempData["TableNumber"];
-            // Keep table number in TempData for next request
-            if (TempData["TableNumber"] != null)
-            {
-                TempData.Keep("TableNumber");
-            }
             return View();
         }
 
@@ -65,47 +51,30 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         public IActionResult SelectExperience(string experienceType)
         {
             TempData["ExperienceType"] = experienceType;
-            // Preserve table number if it exists
-            if (TempData["TableNumber"] != null)
-            {
-                TempData.Keep("TableNumber");
-            }
             if (experienceType == "Unlimited") return RedirectToAction("UnlimitedMenu");
             if (experienceType == "AlaCarte") return RedirectToAction("AlaCarteMenu");
             return RedirectToAction("ChooseExperience");
         }
 
-        public async Task<IActionResult> AlaCarteMenu(string tableNumber = null)
+        public async Task<IActionResult> AlaCarteMenu()
         {
-            TempData.Keep("ExperienceType"); // Keep it for the next request
-            if (!string.IsNullOrEmpty(tableNumber))
-            {
-                TempData["TableNumber"] = tableNumber;
-            }
-            else if (TempData["TableNumber"] != null)
-            {
-                TempData.Keep("TableNumber"); // Keep table number if it exists
-            }
+            // Set experience type and keep it for the next request
+            TempData["ExperienceType"] = "AlaCarte";
+            TempData.Keep("ExperienceType");
+            TempData.Keep("DiningType"); // Keep dining type if it exists
             ViewBag.ExperienceType = "AlaCarte";
-            ViewBag.TableNumber = tableNumber ?? TempData["TableNumber"]?.ToString();
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
             return View(items);
         }
 
-        public async Task<IActionResult> UnlimitedMenu(string tableNumber = null)
+        public async Task<IActionResult> UnlimitedMenu()
         {
-            TempData.Keep("ExperienceType"); // Keep it for the next request
-            if (!string.IsNullOrEmpty(tableNumber))
-            {
-                TempData["TableNumber"] = tableNumber;
-            }
-            else if (TempData["TableNumber"] != null)
-            {
-                TempData.Keep("TableNumber"); // Keep table number if it exists
-            }
+            // Set experience type and keep it for the next request
+            TempData["ExperienceType"] = "Unlimited";
+            TempData.Keep("ExperienceType");
+            TempData.Keep("DiningType"); // Keep dining type if it exists
             ViewBag.ExperienceType = "Unlimited";
-            ViewBag.TableNumber = tableNumber ?? TempData["TableNumber"]?.ToString();
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
             return View(items);
@@ -161,37 +130,33 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                 var random = new Random();
                 string orderNumber = random.Next(1000, 9999).ToString();
 
-                // Get dining type and table number from TempData
+                // Get dining type from TempData
                 string diningType = TempData["DiningType"]?.ToString() ?? "DineIn";
-                string tableNumber = TempData["TableNumber"]?.ToString();
-                
-                // Keep table number in TempData in case user wants to reorder
-                if (!string.IsNullOrEmpty(tableNumber))
-                {
-                    TempData.Keep("TableNumber");
-                }
 
-                // Check 1-hour time limit for DineIn table orders
-                if (!string.IsNullOrEmpty(tableNumber) && diningType == "DineIn")
+                // Check 1-hour time limit using session
+                string sessionKey = "FirstOrderTime";
+                DateTime? firstOrderTime = HttpContext.Session.GetString(sessionKey) != null 
+                    ? DateTime.Parse(HttpContext.Session.GetString(sessionKey)) 
+                    : null;
+
+                if (firstOrderTime.HasValue)
                 {
-                    var existingOrders = await _orderService.GetOrdersByTableAsync(tableNumber);
+                    // Not the first order - check if 1 hour has passed
+                    var timeSinceFirstOrder = DateTime.UtcNow - firstOrderTime.Value;
+                    var oneHour = TimeSpan.FromHours(1);
                     
-                    if (existingOrders.Any())
+                    if (timeSinceFirstOrder > oneHour)
                     {
-                        // Not the first order - check if 1 hour has passed since first order
-                        var firstOrder = existingOrders.OrderBy(o => o.OrderDate).First();
-                        var timeSinceFirstOrder = DateTime.UtcNow - firstOrder.OrderDate;
-                        var oneHour = TimeSpan.FromHours(1);
-                        
-                        if (timeSinceFirstOrder > oneHour)
-                        {
-                            return Json(new { 
-                                success = false, 
-                                message = $"Time limit exceeded. This table's 1-hour session started at {firstOrder.OrderDate:hh:mm tt} and has expired. Please contact staff for assistance." 
-                            });
-                        }
+                        return Json(new { 
+                            success = false, 
+                            message = $"Time limit exceeded. Your 1-hour session started at {firstOrderTime.Value.ToLocalTime():hh:mm tt} and has expired. Please start a new session." 
+                        });
                     }
-                    // If it's the first order, allow it (timer starts now)
+                }
+                else
+                {
+                    // First order - store the timestamp in session
+                    HttpContext.Session.SetString(sessionKey, DateTime.UtcNow.ToString("O"));
                 }
 
                 var order = new Order
@@ -201,7 +166,7 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                     Status = "Pending",
                     OrderType = experienceType, // ✅ Store the order type (AlaCarte/Unlimited)
                     DiningType = diningType, // ✅ Store the dining type (DineIn/TakeOut)
-                    TableNumber = tableNumber, // ✅ Store the table number if available
+                    TableNumber = null, // ✅ Table numbers removed - all reorders through confirmation page
                     Subtotal = subtotal,
                     Tax = tax,
                     Total = total,
@@ -231,7 +196,46 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             if (order == null)
                 return RedirectToAction("Index");
 
+            // Preserve order type and dining type for reordering
+            if (!string.IsNullOrEmpty(order.OrderType))
+            {
+                TempData["ExperienceType"] = order.OrderType;
+            }
+            if (!string.IsNullOrEmpty(order.DiningType))
+            {
+                TempData["DiningType"] = order.DiningType;
+            }
+
             return View(order);
+        }
+
+        [HttpGet]
+        [IgnoreAntiforgeryToken]
+        public IActionResult GetSessionInfo()
+        {
+            string sessionKey = "FirstOrderTime";
+            string firstOrderTimeStr = HttpContext.Session.GetString(sessionKey);
+            
+            if (string.IsNullOrEmpty(firstOrderTimeStr))
+            {
+                return Json(new { hasSession = false });
+            }
+
+            DateTime firstOrderTime = DateTime.Parse(firstOrderTimeStr);
+            var timeSinceFirstOrder = DateTime.UtcNow - firstOrderTime;
+            var oneHour = TimeSpan.FromHours(1);
+            var timeRemaining = oneHour - timeSinceFirstOrder;
+            var isExpired = timeRemaining <= TimeSpan.Zero;
+
+            return Json(new
+            {
+                hasSession = true,
+                firstOrderTime = firstOrderTime,
+                timeRemainingSeconds = isExpired ? 0 : (int)timeRemaining.TotalSeconds,
+                timeRemainingMinutes = isExpired ? 0 : (int)timeRemaining.TotalMinutes,
+                isExpired = isExpired,
+                timeRemainingFormatted = isExpired ? "00:00" : $"{(int)timeRemaining.TotalMinutes:D2}:{timeRemaining.Seconds:D2}"
+            });
         }
 
         [HttpGet]
@@ -267,38 +271,6 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             return RedirectToAction("Confirmation", new { orderNumber = orderNumber });
         }
 
-        [HttpGet]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> GetTableSessionInfo([FromQuery] string tableNumber)
-        {
-            if (string.IsNullOrEmpty(tableNumber))
-            {
-                return Json(new { hasSession = false });
-            }
-
-            var existingOrders = await _orderService.GetOrdersByTableAsync(tableNumber);
-            
-            if (!existingOrders.Any())
-            {
-                return Json(new { hasSession = false });
-            }
-
-            var firstOrder = existingOrders.OrderBy(o => o.OrderDate).First();
-            var timeSinceFirstOrder = DateTime.UtcNow - firstOrder.OrderDate;
-            var oneHour = TimeSpan.FromHours(1);
-            var timeRemaining = oneHour - timeSinceFirstOrder;
-            var isExpired = timeRemaining <= TimeSpan.Zero;
-
-            return Json(new
-            {
-                hasSession = true,
-                firstOrderTime = firstOrder.OrderDate,
-                timeRemainingSeconds = isExpired ? 0 : (int)timeRemaining.TotalSeconds,
-                timeRemainingMinutes = isExpired ? 0 : (int)timeRemaining.TotalMinutes,
-                isExpired = isExpired,
-                timeRemainingFormatted = isExpired ? "00:00" : $"{(int)timeRemaining.TotalMinutes:D2}:{timeRemaining.Seconds:D2}"
-            });
-        }
 
         [HttpPost]
         [IgnoreAntiforgeryToken] // Allow API calls without CSRF token

@@ -23,25 +23,16 @@
             <div class="menu-header">
                 <h1>CHICKEN WINGS MENU</h1>
                 <p>Order your favorite dishes with ease</p>
-                @if (ViewBag.TableNumber != null)
-                {
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 15px 0;">
-                        <div style="background: #fff3e6; border: 2px solid #e67e22; border-radius: 10px; padding: 10px 15px; display: inline-block;">
-                            <i class="bi bi-table" style="color: #d35400; margin-right: 5px;"></i>
-                            <strong style="color: #d35400;">Table @ViewBag.TableNumber</strong>
-                        </div>
-                        <div id="table-timer" style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 10px 15px; display: none;">
-                            <i class="bi bi-clock" style="color: #2e7d32; margin-right: 5px;"></i>
-                            <strong style="color: #2e7d32;">Time Remaining: <span id="timer-display">--:--</span></strong>
-                        </div>
-                        <div id="table-timer-expired" style="background: #ffebee; border: 2px solid #f44336; border-radius: 10px; padding: 10px 15px; display: none;">
-                            <i class="bi bi-exclamation-triangle" style="color: #c62828; margin-right: 5px;"></i>
-                            <strong style="color: #c62828;">Session Expired - Please contact staff</strong>
-                        </div>
-                    </div>
-                }
                 <h2 style="margin-top:20px;">ALA CARTE MENU</h2>
                 <p>Pick and enjoy our flavorful chicken wings and special sides</p>
+                <div id="session-timer" style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 10px 15px; margin: 15px auto; display: none; max-width: 300px;">
+                    <i class="bi bi-clock" style="color: #2e7d32; margin-right: 5px;"></i>
+                    <strong style="color: #2e7d32;">Time Remaining: <span id="timer-display">--:--</span></strong>
+                </div>
+                <div id="session-timer-expired" style="background: #ffebee; border: 2px solid #f44336; border-radius: 10px; padding: 10px 15px; margin: 15px auto; display: none; max-width: 300px;">
+                    <i class="bi bi-exclamation-triangle" style="color: #c62828; margin-right: 5px;"></i>
+                    <strong style="color: #c62828;">Session Expired - Please start a new order</strong>
+                </div>
             </div>
 
             <!-- Tabs -->
@@ -263,10 +254,10 @@
 
     // Confirm order button
            document.querySelector('.confirm-btn').addEventListener('click', function () {
-        // Check if timer is expired (client-side check)
-        const expiredContainer = document.getElementById('table-timer-expired');
-        if (expiredContainer && expiredContainer.style.display === 'block') {
-            alert('Your table session has expired. Please contact staff for assistance.');
+        // Check if session is expired (client-side check)
+        const expiredContainer = document.getElementById('session-timer-expired');
+        if (expiredContainer && expiredContainer.style.display !== 'none') {
+            alert('Your 1-hour session has expired. Please start a new order.');
             return;
         }
 
@@ -314,74 +305,68 @@
 
     });
 
-    // Table session timer
-    @if (ViewBag.TableNumber != null)
-    {
-        <text>
-        (function() {
-            const tableNumber = '@ViewBag.TableNumber';
-            let timerInterval = null;
+    // Session timer
+    (function() {
+        let timerInterval = null;
 
-            function updateTimer() {
-                fetch(`/Customer/Kiosk/GetTableSessionInfo?tableNumber=${tableNumber}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const timerDisplay = document.getElementById('timer-display');
-                        const timerContainer = document.getElementById('table-timer');
-                        const expiredContainer = document.getElementById('table-timer-expired');
+        function updateTimer() {
+            fetch('/Customer/Kiosk/GetSessionInfo')
+                .then(response => response.json())
+                .then(data => {
+                    const timerDisplay = document.getElementById('timer-display');
+                    const timerContainer = document.getElementById('session-timer');
+                    const expiredContainer = document.getElementById('session-timer-expired');
 
-                        if (data.hasSession) {
-                            const confirmBtn = document.querySelector('.confirm-btn');
-                            if (data.isExpired) {
-                                timerContainer.style.display = 'none';
-                                expiredContainer.style.display = 'block';
-                                if (confirmBtn) {
-                                    confirmBtn.disabled = true;
-                                    confirmBtn.style.opacity = '0.5';
-                                    confirmBtn.style.cursor = 'not-allowed';
-                                    confirmBtn.title = 'Session expired. Please contact staff.';
-                                }
-                                if (timerInterval) {
-                                    clearInterval(timerInterval);
-                                }
-                            } else {
-                                timerContainer.style.display = 'block';
-                                expiredContainer.style.display = 'none';
-                                
-                                const minutes = Math.floor(data.timeRemainingSeconds / 60);
-                                const seconds = data.timeRemainingSeconds % 60;
-                                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                                
-                                // Change color when less than 10 minutes remaining
-                                if (data.timeRemainingSeconds < 600) {
-                                    timerContainer.style.background = '#fff3e0';
-                                    timerContainer.style.borderColor = '#ff9800';
-                                    timerDisplay.style.color = '#e65100';
-                                }
-                                
-                                // Enable order button if it was disabled
-                                if (confirmBtn) {
-                                    confirmBtn.disabled = false;
-                                    confirmBtn.style.opacity = '1';
-                                    confirmBtn.style.cursor = 'pointer';
-                                    confirmBtn.title = '';
-                                }
+                    if (data.hasSession) {
+                        const confirmBtn = document.querySelector('.confirm-btn');
+                        if (data.isExpired) {
+                            timerContainer.style.display = 'none';
+                            expiredContainer.style.display = 'block';
+                            if (confirmBtn) {
+                                confirmBtn.disabled = true;
+                                confirmBtn.style.opacity = '0.5';
+                                confirmBtn.style.cursor = 'not-allowed';
+                                confirmBtn.title = 'Session expired. Please start a new order.';
+                            }
+                            if (timerInterval) {
+                                clearInterval(timerInterval);
                             }
                         } else {
-                            timerContainer.style.display = 'none';
+                            timerContainer.style.display = 'block';
                             expiredContainer.style.display = 'none';
+                            
+                            const minutes = Math.floor(data.timeRemainingSeconds / 60);
+                            const seconds = data.timeRemainingSeconds % 60;
+                            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                            
+                            // Change color when less than 10 minutes remaining
+                            if (data.timeRemainingSeconds < 600) {
+                                timerContainer.style.background = '#fff3e0';
+                                timerContainer.style.borderColor = '#ff9800';
+                                timerDisplay.style.color = '#e65100';
+                            }
+                            
+                            // Enable order button if it was disabled
+                            if (confirmBtn) {
+                                confirmBtn.disabled = false;
+                                confirmBtn.style.opacity = '1';
+                                confirmBtn.style.cursor = 'pointer';
+                                confirmBtn.title = '';
+                            }
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching table session info:', error);
-                    });
-            }
+                    } else {
+                        timerContainer.style.display = 'none';
+                        expiredContainer.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching session info:', error);
+                });
+        }
 
-            // Update timer immediately and then every second
-            updateTimer();
-            timerInterval = setInterval(updateTimer, 1000);
-        })();
-        </text>
-    }
+        // Update timer immediately and then every second
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+    })();
 
 </script>

@@ -14,12 +14,6 @@
     </form>
 
     <h1>Choose Your Wing Experience</h1>
-    @if (ViewBag.TableNumber != null)
-    {
-        <div style="position: absolute; top: 30px; right: 40px; background: #ff6b35; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 1.1em; box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);">
-            Table @ViewBag.TableNumber
-        </div>
-    }
 
     <div class="choices">
         <form method="post" asp-action="SelectExperience">
