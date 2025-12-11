@@ -70,7 +70,7 @@
     <script>
         let currentTableNumber = null;
         let qrCodeLibraryLoaded = false;
-        const baseUrl = 'https://kitchendisplaysystem.onrender.com';
+        const baseUrl = '@baseUrl';
         
         // Fallback CDN loader
         function loadQRCodeFallback() {
@@ -91,11 +91,11 @@
             document.head.appendChild(script);
         }
         
-        // Table URLs
+        // Table URLs - using localhost/baseUrl
         const tableUrls = {
             @for (int tableNum = 1; tableNum <= 4; tableNum++)
             {
-                var qrUrl = $"https://kitchendisplaysystem.onrender.com/Customer/Kiosk/TableMenu?tableNumber={tableNum}";
+                var qrUrl = $"{baseUrl}/Customer/Kiosk/TableMenu?tableNumber={tableNum}";
                 <text>
                 @tableNum: '@Html.Raw(qrUrl)',
                 </text>
