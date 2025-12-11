@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SelfOrderingSystemKiosk.Services;
 using System;
 using System.Linq;
@@ -7,6 +8,7 @@ namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
 {
 
     [Area("Kitchen")]
+    [Authorize(Roles = "Kitchen,Admin")]
     public class KitchenController : Controller
     {
         private readonly OrderService _orderService;
@@ -73,15 +75,27 @@ namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateStatus(string id, string status)
         {
+            // Get the order to check current status
+            var order = await _orderService.GetByIdAsync(id);
+            
+            if (order == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            // Prevent marking as "Completed" if order is still "Pending"
+            if (status.Equals("Completed", StringComparison.OrdinalIgnoreCase) && 
+                order.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Cannot mark order as done. Please start the order first.";
+                return RedirectToAction("Index");
+            }
+
             // If status is being changed to "Completed", decrement stock
             if (status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
             {
-                // Get the order to access its items and current status
-                var order = await _orderService.GetByIdAsync(id);
-                
                 // Only decrement if order is not already completed (prevent double-decrementing)
-                if (order != null && 
-                    !order.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) &&
+                if (!order.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) &&
                     order.Items != null && order.Items.Any())
                 {
                     // Decrement stock for each item in the order

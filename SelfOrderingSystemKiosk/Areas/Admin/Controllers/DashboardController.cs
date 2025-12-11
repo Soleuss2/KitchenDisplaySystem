@@ -5,9 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Order = SelfOrderingSystemKiosk.Areas.Customer.Models.Order;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace SelfOrderingSystemKiosk.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Admin")]
     public class DashboardController : Controller
     {
         private readonly StockService _stockService;
@@ -66,6 +69,15 @@ namespace SelfOrderingSystemKiosk.Controllers
                 .Where(o => o.OrderType == "Unlimited" && o.Total > 0)
                 .Sum(o => o.Total);
 
+            // Revenue split by dining type (DineIn / TakeOut)
+            decimal todaysRevenueDineIn = todayOrders
+                .Where(o => (o.DiningType ?? "DineIn") == "DineIn" && o.Total > 0)
+                .Sum(o => o.Total);
+
+            decimal todaysRevenueTakeOut = todayOrders
+                .Where(o => o.DiningType == "TakeOut" && o.Total > 0)
+                .Sum(o => o.Total);
+
             // Time-range revenue filter
             var rangeStart = ParseDateOrDefault(startDate, todayStart);
             var rangeEnd = ParseDateOrDefault(endDate, todayEnd);
@@ -87,6 +99,15 @@ namespace SelfOrderingSystemKiosk.Controllers
             var rangeRevenueUnlimited = rangeOrders
                 .Where(o => o.OrderType == "Unlimited" && o.Total > 0)
                 .Sum(o => o.Total);
+            
+            // Revenue split by dining type for date range
+            var rangeRevenueDineIn = rangeOrders
+                .Where(o => (o.DiningType ?? "DineIn") == "DineIn" && o.Total > 0)
+                .Sum(o => o.Total);
+            var rangeRevenueTakeOut = rangeOrders
+                .Where(o => o.DiningType == "TakeOut" && o.Total > 0)
+                .Sum(o => o.Total);
+            
             var rangeOrderCount = rangeOrders.Count;
 
             // Best sellers - all time and today
@@ -162,11 +183,15 @@ namespace SelfOrderingSystemKiosk.Controllers
             ViewBag.TodaysRevenue = todaysRevenue;
             ViewBag.TodaysRevenueAlaCarte = todaysRevenueAlaCarte;
             ViewBag.TodaysRevenueUnlimited = todaysRevenueUnlimited;
+            ViewBag.TodaysRevenueDineIn = todaysRevenueDineIn;
+            ViewBag.TodaysRevenueTakeOut = todaysRevenueTakeOut;
             ViewBag.RangeStart = rangeStart;
             ViewBag.RangeEnd = rangeEnd.AddDays(-1); // store inclusive end date for display/input
             ViewBag.RangeRevenue = rangeRevenue;
             ViewBag.RangeRevenueAlaCarte = rangeRevenueAlaCarte;
             ViewBag.RangeRevenueUnlimited = rangeRevenueUnlimited;
+            ViewBag.RangeRevenueDineIn = rangeRevenueDineIn;
+            ViewBag.RangeRevenueTakeOut = rangeRevenueTakeOut;
             ViewBag.RangeOrderCount = rangeOrderCount;
             // Calculate revenue totals for chart
             var weeklyRevenue = weeklySales.Values.Sum(s => s.Revenue);

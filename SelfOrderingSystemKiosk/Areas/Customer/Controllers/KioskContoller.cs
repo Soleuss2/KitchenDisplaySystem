@@ -107,12 +107,16 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                 var random = new Random();
                 string orderNumber = random.Next(1000, 9999).ToString();
 
+                // Get dining type from TempData
+                string diningType = TempData["DiningType"]?.ToString() ?? "DineIn";
+
                 var order = new Order
                 {
                     OrderNumber = orderNumber,
                     OrderDate = DateTime.UtcNow,
                     Status = "Pending",
-                    OrderType = experienceType, // ✅ Store the order type
+                    OrderType = experienceType, // ✅ Store the order type (AlaCarte/Unlimited)
+                    DiningType = diningType, // ✅ Store the dining type (DineIn/TakeOut)
                     Subtotal = subtotal,
                     Tax = tax,
                     Total = total,

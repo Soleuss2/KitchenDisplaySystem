@@ -645,23 +645,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\User\\.nuget\\packages\\": {},
+    "C:\\Users\\Nyak\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\User\\source\\repos\\KitchenDisplaySystem\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
+      "projectUniqueName": "E:\\KItchenSystemKiosk\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
       "projectName": "SelfOrderingSystemKiosk",
-      "projectPath": "C:\\Users\\User\\source\\repos\\KitchenDisplaySystem\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
-      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\User\\source\\repos\\KitchenDisplaySystem\\SelfOrderingSystemKiosk\\obj\\",
+      "projectPath": "E:\\KItchenSystemKiosk\\SelfOrderingSystemKiosk\\SelfOrderingSystemKiosk.csproj",
+      "packagesPath": "C:\\Users\\Nyak\\.nuget\\packages\\",
+      "outputPath": "E:\\KItchenSystemKiosk\\SelfOrderingSystemKiosk\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Nyak\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -688,7 +688,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "10.0.100"
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net8.0": {
@@ -726,7 +726,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -22,6 +22,10 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Models
         [JsonPropertyName("orderType")]
         public string OrderType { get; set; }
 
+        [BsonElement("diningType")]
+        [JsonPropertyName("diningType")]
+        public string DiningType { get; set; }
+
         [BsonElement("items")]
         [JsonPropertyName("items")]
         public List<OrderItem> Items { get; set; }

@@ -92,7 +92,8 @@
                                             data-unit="@i.Unit"
                                             data-reorder="@i.ReorderLevel"
                                             data-availability="@i.Availability"
-                                            onclick="const btn = this; openEditModal(btn.getAttribute('data-id'), btn.getAttribute('data-name'), btn.getAttribute('data-category'), btn.getAttribute('data-price'), btn.getAttribute('data-stock'), btn.getAttribute('data-unit'), btn.getAttribute('data-reorder'), btn.getAttribute('data-availability'));">
+                                            data-image="@i.Image"
+                                            onclick="const btn = this; openEditModal(btn.getAttribute('data-id'), btn.getAttribute('data-name'), btn.getAttribute('data-category'), btn.getAttribute('data-price'), btn.getAttribute('data-stock'), btn.getAttribute('data-unit'), btn.getAttribute('data-reorder'), btn.getAttribute('data-availability'), btn.getAttribute('data-image'));">
                                         Edit
                                     </button>
                                     <form asp-action="Delete" method="post" style="display:inline;">
@@ -365,6 +366,8 @@
 
     function closeAddModal() {
         document.getElementById('addItemModal').classList.remove('active');
+        document.getElementById('addItemForm').reset();
+        clearImagePreview('addImageFile', 'addImagePreview');
     }
 
     // Close modal when clicking outside
@@ -382,8 +385,30 @@
         }
     });
 
+    // Image Preview Functions
+    function previewImage(input, previewContainerId) {
+        const previewContainer = document.getElementById(previewContainerId);
+        const previewImg = document.getElementById(previewContainerId + 'Img');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewContainer.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function clearImagePreview(inputId, previewContainerId) {
+        const input = document.getElementById(inputId);
+        const previewContainer = document.getElementById(previewContainerId);
+        if (input) input.value = '';
+        if (previewContainer) previewContainer.style.display = 'none';
+    }
+
     // Edit Modal Functions
-    function openEditModal(id, name, category, price, stock, unit, reorderLevel, availability) {
+    function openEditModal(id, name, category, price, stock, unit, reorderLevel, availability, image) {
         try {
             const modal = document.getElementById('editItemModal');
             if (!modal) {
@@ -402,6 +427,9 @@
             const unitField = document.getElementById('editUnit');
             const reorderField = document.getElementById('editReorderLevel');
             const availabilityField = document.getElementById('editAvailability');
+            const imageField = document.getElementById('editItemImage');
+            const currentImageImg = document.getElementById('editCurrentImageImg');
+            const currentImageDiv = document.getElementById('editCurrentImage');
             
             if (idField) idField.value = id || '';
             if (nameField) nameField.value = name || '';
@@ -411,6 +439,18 @@
             if (unitField) unitField.value = unit || 'pcs';
             if (reorderField) reorderField.value = reorderLevel || '10';
             if (availabilityField) availabilityField.value = availability || 'Available';
+            if (imageField) imageField.value = image || '';
+            
+            // Show current image if exists
+            if (image && currentImageImg) {
+                currentImageImg.src = image;
+                currentImageImg.style.display = 'block';
+            } else if (currentImageImg) {
+                currentImageImg.style.display = 'none';
+            }
+            
+            // Clear any preview
+            clearImagePreview('editImageFile', 'editImagePreview');
         } catch (error) {
             console.error('Error opening edit modal:', error);
             alert('Error opening edit form. Please refresh the page and try again.');
@@ -436,7 +476,8 @@
                 button.getAttribute('data-stock'),
                 button.getAttribute('data-unit'),
                 button.getAttribute('data-reorder'),
-                button.getAttribute('data-availability')
+                button.getAttribute('data-availability'),
+                button.getAttribute('data-image')
             );
         }
     });
@@ -449,6 +490,7 @@
             if (form) {
                 form.reset();
             }
+            clearImagePreview('editImageFile', 'editImagePreview');
         }
     }
 
@@ -479,10 +521,19 @@
             <h2><i class="bi bi-plus-circle"></i> Add New Menu Item</h2>
             <button type="button" class="close-modal" onclick="closeAddModal()">&times;</button>
         </div>
-        <form method="post" asp-action="Add" id="addItemForm" class="modal-form">
+        <form method="post" asp-action="Add" id="addItemForm" class="modal-form" enctype="multipart/form-data">
             <div class="form-group">
                 <label>Menu Item Name *</label>
                 <input type="text" name="name" placeholder="e.g., Buffalo Wings" required />
+            </div>
+            
+            <div class="form-group">
+                <label>Item Picture (Optional)</label>
+                <input type="file" name="imageFile" id="addImageFile" accept="image/*" onchange="previewImage(this, 'addImagePreview')" />
+                <div id="addImagePreview" class="image-preview" style="margin-top: 10px; display: none;">
+                    <img id="addImagePreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 5px; border: 2px solid #ddd;" />
+                    <button type="button" onclick="clearImagePreview('addImageFile', 'addImagePreview')" style="margin-top: 5px; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Remove</button>
+                </div>
             </div>
             
             <div class="form-row">
@@ -565,12 +616,25 @@
             <h2><i class="bi bi-pencil-square"></i> Edit Menu Item</h2>
             <button type="button" class="close-modal" onclick="closeEditModal()">&times;</button>
         </div>
-        <form method="post" asp-action="Edit" id="editItemForm" class="modal-form">
+        <form method="post" asp-action="Edit" id="editItemForm" class="modal-form" enctype="multipart/form-data">
             <input type="hidden" name="Id" id="editItemId" />
+            <input type="hidden" name="Image" id="editItemImage" />
             
             <div class="form-group">
                 <label>Menu Item Name *</label>
                 <input type="text" name="Item" id="editItemName" placeholder="e.g., Buffalo Wings" required />
+            </div>
+            
+            <div class="form-group">
+                <label>Item Picture (Optional)</label>
+                <div id="editCurrentImage" class="current-image" style="margin-bottom: 10px;">
+                    <img id="editCurrentImageImg" src="" alt="Current image" style="max-width: 200px; max-height: 200px; border-radius: 5px; border: 2px solid #ddd; display: none;" />
+                </div>
+                <input type="file" name="imageFile" id="editImageFile" accept="image/*" onchange="previewImage(this, 'editImagePreview')" />
+                <div id="editImagePreview" class="image-preview" style="margin-top: 10px; display: none;">
+                    <img id="editImagePreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 5px; border: 2px solid #ddd;" />
+                    <button type="button" onclick="clearImagePreview('editImageFile', 'editImagePreview')" style="margin-top: 5px; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Remove</button>
+                </div>
             </div>
             
             <div class="form-row">

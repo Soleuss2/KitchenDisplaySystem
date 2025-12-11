@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using SelfOrderingSystemKiosk.Models;
 using SelfOrderingSystemKiosk.Services;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 namespace SelfOrderingSystemKiosk.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Admin")]
     public class InventoryController : Controller
     {
         private readonly StockService _stockService;

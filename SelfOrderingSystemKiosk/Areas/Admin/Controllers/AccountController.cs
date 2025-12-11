@@ -27,6 +27,19 @@ namespace SelfOrderingSystemKiosk.Controllers
         [HttpGet]
         public IActionResult Login()
         {
+            // If user is already authenticated, redirect to appropriate dashboard
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+                if (role?.Equals("Kitchen", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return RedirectToAction("Index", "Kitchen", new { area = "Kitchen" });
+                }
+                else
+                {
+                    return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+                }
+            }
             return View();
         }
 
@@ -47,18 +60,30 @@ namespace SelfOrderingSystemKiosk.Controllers
                 return View();
             }
 
-            // Checks if admin
+            // Get user role (default to Admin if not set)
+            var userRole = existingUser.Role ?? "Admin";
+
+            // Create claims with user information
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, existingUser.Username),
-        new Claim(ClaimTypes.Role, existingUser.Role ?? "Admin")
-    };
+            {
+                new Claim(ClaimTypes.Name, existingUser.Username),
+                new Claim(ClaimTypes.Role, userRole)
+            };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return RedirectToAction("Index", "Dashboard");
+            // Redirect based on user role
+            if (userRole.Equals("Kitchen", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("Index", "Kitchen", new { area = "Kitchen" });
+            }
+            else
+            {
+                // Default to Admin dashboard
+                return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+            }
         }
 
 
@@ -81,9 +106,10 @@ namespace SelfOrderingSystemKiosk.Controllers
             return View();
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             HttpContext.Session.Clear();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
         }
 

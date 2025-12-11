@@ -381,6 +381,14 @@
         <span>Refreshing...</span>
     </div>
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div style="background: #F44336; color: white; padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem;"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
     <div class="date-filters">
         <button class="date-filter-btn @(ViewBag.DateFilter == "all" || ViewBag.DateFilter == null ? "active" : "")" onclick="filterByDate('all')">
             <i class="bi bi-calendar"></i> All Time
@@ -460,24 +468,21 @@
                 }
 
                 <div class="order-actions">
-                    @if (order.Status == "Pending")
+                    @if (string.Equals(order.Status, "Pending", StringComparison.OrdinalIgnoreCase))
                     {
-                        <button type="button" class="action-btn btn-start" onclick="updateStatus('@order.Id', 'In Progress', event)">
+                        <button type="button" class="action-btn btn-start" onclick="updateStatus('@order.Id', 'In Progress', event)" style="grid-column: 1 / -1; width: 100%;">
                             <i class="bi bi-play-fill"></i> Start
                         </button>
-                        <button type="button" class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed', event)">
-                            <i class="bi bi-check-circle"></i> Done
-                        </button>
                     }
-                    else if (order.Status == "In Progress")
+                    else if (string.Equals(order.Status, "In Progress", StringComparison.OrdinalIgnoreCase))
                     {
-                        <button type="button" class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed', event)" style="grid-column: 1 / -1;">
+                        <button type="button" class="action-btn btn-done" onclick="updateStatus('@order.Id', 'Completed', event)" style="grid-column: 1 / -1; width: 100%;">
                             <i class="bi bi-check-circle"></i> Done
                         </button>
                     }
                     else
                     {
-                        <button type="button" class="action-btn btn-done" style="grid-column: 1 / -1;" disabled>
+                        <button type="button" class="action-btn btn-done" style="grid-column: 1 / -1; width: 100%;" disabled>
                             Order @order.Status
                         </button>
                     }

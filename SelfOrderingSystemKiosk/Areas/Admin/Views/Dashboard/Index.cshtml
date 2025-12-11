@@ -3,6 +3,8 @@
     var labelsJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Labels);
     var valuesJson = System.Text.Json.JsonSerializer.Serialize(ViewBag.Values);
     var todayRevenue = ViewBag.TodaysRevenue != null ? (decimal)ViewBag.TodaysRevenue : 0m;
+    var todayRevenueDineIn = ViewBag.TodaysRevenueDineIn != null ? (decimal)ViewBag.TodaysRevenueDineIn : 0m;
+    var todayRevenueTakeOut = ViewBag.TodaysRevenueTakeOut != null ? (decimal)ViewBag.TodaysRevenueTakeOut : 0m;
     var lowStockItemsList = ViewBag.LowStockList as List<SelfOrderingSystemKiosk.Models.InventoryItem> ?? new List<SelfOrderingSystemKiosk.Models.InventoryItem>();
     var bestSellersAll = ViewBag.BestSellersAllTime as List<SelfOrderingSystemKiosk.Controllers.BestSeller> ?? new List<SelfOrderingSystemKiosk.Controllers.BestSeller>();
     var bestSellersToday = ViewBag.BestSellersToday as List<SelfOrderingSystemKiosk.Controllers.BestSeller> ?? new List<SelfOrderingSystemKiosk.Controllers.BestSeller>();
@@ -13,6 +15,8 @@
     var rangeRevenue = ViewBag.RangeRevenue != null ? (decimal)ViewBag.RangeRevenue : 0m;
     var rangeRevenueAlaCarte = ViewBag.RangeRevenueAlaCarte != null ? (decimal)ViewBag.RangeRevenueAlaCarte : 0m;
     var rangeRevenueUnlimited = ViewBag.RangeRevenueUnlimited != null ? (decimal)ViewBag.RangeRevenueUnlimited : 0m;
+    var rangeRevenueDineIn = ViewBag.RangeRevenueDineIn != null ? (decimal)ViewBag.RangeRevenueDineIn : 0m;
+    var rangeRevenueTakeOut = ViewBag.RangeRevenueTakeOut != null ? (decimal)ViewBag.RangeRevenueTakeOut : 0m;
     var rangeOrderCount = ViewBag.RangeOrderCount != null ? (int)ViewBag.RangeOrderCount : 0;
 }
 
@@ -45,6 +49,12 @@
             </div>
             <div class="stat-revenue" style="color: #9b59b6; font-size: 0.85em; margin-top: 2px; font-weight: 600;">
                 Unlimited: ₱@todayRevenueUnlimited.ToString("N2")
+            </div>
+            <div class="stat-revenue" style="color: #3498db; font-size: 0.85em; margin-top: 2px; font-weight: 600;">
+                Dine In: ₱@todayRevenueDineIn.ToString("N2")
+            </div>
+            <div class="stat-revenue" style="color: #e74c3c; font-size: 0.85em; margin-top: 2px; font-weight: 600;">
+                Take Out: ₱@todayRevenueTakeOut.ToString("N2")
             </div>
         </div>
         <div class="stat-card highlight-card clickable-card" role="button" tabindex="0" onclick="showBestSellersModal()" onkeypress="if(event.key === 'Enter' || event.key === ' ') { showBestSellersModal(); }">
@@ -159,6 +169,14 @@
                     <span class="sales-label">Unlimited:</span>
                     <span class="sales-value">₱@todayRevenueUnlimited.ToString("N2")</span>
                 </div>
+                <div class="sales-stat">
+                    <span class="sales-label">Dine In:</span>
+                    <span class="sales-value" style="color: #3498db;">₱@todayRevenueDineIn.ToString("N2")</span>
+                </div>
+                <div class="sales-stat">
+                    <span class="sales-label">Take Out:</span>
+                    <span class="sales-value" style="color: #e74c3c;">₱@todayRevenueTakeOut.ToString("N2")</span>
+                </div>
             </div>
         </div>
     </div>
@@ -187,6 +205,8 @@
                     <div class="range-breakdown">
                         <span class="pill warning">Ala Carte: ₱@rangeRevenueAlaCarte.ToString("N2")</span>
                         <span class="pill muted">Unlimited: ₱@rangeRevenueUnlimited.ToString("N2")</span>
+                        <span class="pill" style="background: #D1ECF1; color: #0C5460; border: 1px solid #BEE5EB;">Dine In: ₱@rangeRevenueDineIn.ToString("N2")</span>
+                        <span class="pill" style="background: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB;">Take Out: ₱@rangeRevenueTakeOut.ToString("N2")</span>
                         <span class="pill info">Orders: @rangeOrderCount</span>
                     </div>
                 </div>

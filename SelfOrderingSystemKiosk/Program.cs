@@ -104,6 +104,12 @@ app.UseAuthorization();
 // ✅ Enable session
 app.UseSession();
 
+// Login route for easy access
+app.MapControllerRoute(
+    name: "login",
+    pattern: "login",
+    defaults: new { area = "Admin", controller = "Account", action = "Login" });
+
 app.MapControllerRoute(
     name: "areas",
     pattern: "{area:exists}/{controller}/{action=Index}/{id?}");
