@@ -56,25 +56,44 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             return RedirectToAction("ChooseExperience");
         }
 
-        public async Task<IActionResult> AlaCarteMenu()
+        public async Task<IActionResult> AlaCarteMenu(bool isReorder = false, string previousOrderNumber = null)
         {
             // Set experience type and keep it for the next request
             TempData["ExperienceType"] = "AlaCarte";
             TempData.Keep("ExperienceType");
             TempData.Keep("DiningType"); // Keep dining type if it exists
             ViewBag.ExperienceType = "AlaCarte";
+            ViewBag.IsReorder = isReorder;
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
             return View(items);
         }
 
-        public async Task<IActionResult> UnlimitedMenu()
+        public async Task<IActionResult> UnlimitedMenu(bool isReorder = false, string previousOrderNumber = null)
         {
             // Set experience type and keep it for the next request
             TempData["ExperienceType"] = "Unlimited";
             TempData.Keep("ExperienceType");
             TempData.Keep("DiningType"); // Keep dining type if it exists
             ViewBag.ExperienceType = "Unlimited";
+            ViewBag.IsReorder = isReorder;
+            
+            // For reorders, calculate personCount from previous order
+            int? personCount = null;
+            if (isReorder && !string.IsNullOrEmpty(previousOrderNumber))
+            {
+                var previousOrder = await _orderService.GetByOrderNumberAsync(previousOrderNumber);
+                if (previousOrder != null && previousOrder.OrderType == "Unlimited")
+                {
+                    // Calculate personCount from total: total = (personCount * 377) * 1.12
+                    // So personCount = total / (377 * 1.12)
+                    const decimal pricePerHead = 377m;
+                    const decimal taxRate = 1.12m;
+                    personCount = (int)Math.Round(previousOrder.Total / (pricePerHead * taxRate));
+                    ViewBag.PersonCount = personCount;
+                }
+            }
+            
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
             return View(items);
@@ -221,20 +240,52 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                 return Json(new { hasSession = false });
             }
 
-            DateTime firstOrderTime = DateTime.Parse(firstOrderTimeStr);
+            DateTime firstOrderTime;
+            try
+            {
+                // Parse as UTC to ensure consistent timezone handling
+                firstOrderTime = DateTime.Parse(firstOrderTimeStr, null, System.Globalization.DateTimeStyles.RoundtripKind);
+                if (firstOrderTime.Kind == DateTimeKind.Unspecified)
+                {
+                    firstOrderTime = DateTime.SpecifyKind(firstOrderTime, DateTimeKind.Utc);
+                }
+                else if (firstOrderTime.Kind == DateTimeKind.Local)
+                {
+                    firstOrderTime = firstOrderTime.ToUniversalTime();
+                }
+            }
+            catch
+            {
+                // If parsing fails, clear the session and return no session
+                HttpContext.Session.Remove(sessionKey);
+                return Json(new { hasSession = false });
+            }
+
             var timeSinceFirstOrder = DateTime.UtcNow - firstOrderTime;
             var oneHour = TimeSpan.FromHours(1);
             var timeRemaining = oneHour - timeSinceFirstOrder;
             var isExpired = timeRemaining <= TimeSpan.Zero;
 
+            // Ensure timeRemainingSeconds is never negative and never exceeds 1 hour
+            int timeRemainingSeconds = 0;
+            if (!isExpired && timeRemaining.TotalSeconds > 0)
+            {
+                // Cap at 1 hour (3600 seconds) to prevent display issues
+                timeRemainingSeconds = Math.Max(0, Math.Min(3600, (int)timeRemaining.TotalSeconds));
+            }
+
+            // Calculate minutes and seconds for display
+            int minutes = timeRemainingSeconds / 60;
+            int seconds = timeRemainingSeconds % 60;
+
             return Json(new
             {
                 hasSession = true,
                 firstOrderTime = firstOrderTime,
-                timeRemainingSeconds = isExpired ? 0 : (int)timeRemaining.TotalSeconds,
-                timeRemainingMinutes = isExpired ? 0 : (int)timeRemaining.TotalMinutes,
+                timeRemainingSeconds = timeRemainingSeconds,
+                timeRemainingMinutes = minutes,
                 isExpired = isExpired,
-                timeRemainingFormatted = isExpired ? "00:00" : $"{(int)timeRemaining.TotalMinutes:D2}:{timeRemaining.Seconds:D2}"
+                timeRemainingFormatted = isExpired ? "00:00" : $"{minutes:D2}:{seconds:D2}"
             });
         }
 

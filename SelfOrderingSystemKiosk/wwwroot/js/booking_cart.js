@@ -6,6 +6,11 @@ const pricePerHead = 377;
 let personCount = 0;
 let cart = [];
 
+// Initialize personCount from reorder if available (set early to avoid timing issues)
+if (typeof window !== 'undefined' && window.isReorder === true && window.reorderPersonCount != null && window.reorderPersonCount > 0) {
+    personCount = window.reorderPersonCount;
+}
+
 // 🌐 Modal control (global functions)
 function openModal(id) {
     const modal = document.getElementById(id);
@@ -74,13 +79,32 @@ function getQuantityLimit() {
     return 12;
 }
 
-// 🪟 Show person modal on page load
+// 🪟 Show person modal on page load (skip if reorder)
 window.onload = function () {
     // Initialize summary display after a short delay to ensure DOM is ready
     setTimeout(() => {
         updateOrderSummary();
     }, 50);
-    openModal("personModal");
+    
+    // Check if this is a reorder
+    const isReorder = window.isReorder === true;
+    
+    if (isReorder) {
+        // For reorders, skip the person modal
+        // personCount should already be set from the initialization above
+        const personCountDisplay = document.querySelector(".person-count");
+        if (personCountDisplay && personCount > 0) {
+            personCountDisplay.textContent = `${personCount} Person${personCount > 1 ? "s" : ""}`;
+        }
+        // Update order summary with the person count
+        setTimeout(() => {
+            updateOrderSummary();
+        }, 100);
+        // Skip showing the person modal and rules modal for reorders
+    } else {
+        // Normal flow - show person modal
+        openModal("personModal");
+    }
 };
 
 // ✅ Confirm persons

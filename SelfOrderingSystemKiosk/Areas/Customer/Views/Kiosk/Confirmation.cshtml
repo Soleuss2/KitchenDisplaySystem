@@ -428,13 +428,13 @@
         }
         @if (Model.OrderType == "Unlimited")
         {
-            <a asp-action="UnlimitedMenu" asp-controller="Kiosk" asp-area="Customer" class="btn-primary" style="text-decoration: none; background: #F39C12;">
+            <a asp-action="UnlimitedMenu" asp-controller="Kiosk" asp-area="Customer" asp-route-isReorder="true" asp-route-previousOrderNumber="@Model.OrderNumber" class="btn-primary" style="text-decoration: none; background: #F39C12;">
                 <i class="bi bi-arrow-repeat"></i> Reorder (Unlimited)
             </a>
         }
         else
         {
-            <a asp-action="AlaCarteMenu" asp-controller="Kiosk" asp-area="Customer" class="btn-primary" style="text-decoration: none; background: #F39C12;">
+            <a asp-action="AlaCarteMenu" asp-controller="Kiosk" asp-area="Customer" asp-route-isReorder="true" asp-route-previousOrderNumber="@Model.OrderNumber" class="btn-primary" style="text-decoration: none; background: #F39C12;">
                 <i class="bi bi-arrow-repeat"></i> Reorder (Ala Carte)
             </a>
         }
