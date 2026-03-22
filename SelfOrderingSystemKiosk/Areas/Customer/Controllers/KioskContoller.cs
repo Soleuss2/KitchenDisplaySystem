@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using SelfOrderingSystemKiosk.Areas.Customer.Models;
 using SelfOrderingSystemKiosk.Models;
 using SelfOrderingSystemKiosk.Services;
@@ -11,25 +12,112 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
     {
         private readonly OrderService _orderService;
         private readonly StockService _stockService;
+        private readonly MenuCategoryRegistry _menuCategories;
+        private readonly ILogger<KioskController> _logger;
 
-        public KioskController(OrderService orderService, StockService stockService)
+        private const string SessionOrderChannel = "OrderChannel";
+        private const string SessionServiceTable = "ServiceTableNumber";
+        private const string SessionServiceFloor = "ServiceFloor";
+        private const string SessionDiningType = "DiningType";
+        private const string OrderChannelKiosk = "Kiosk";
+        private const string OrderChannelQr = "Qr";
+
+        public KioskController(OrderService orderService, StockService stockService, MenuCategoryRegistry menuCategories, ILogger<KioskController> logger)
         {
             _orderService = orderService;
             _stockService = stockService;
+            _menuCategories = menuCategories;
+            _logger = logger;
+        }
+
+        private void SetKioskChannelDefaults()
+        {
+            HttpContext.Session.SetString(SessionOrderChannel, OrderChannelKiosk);
+            HttpContext.Session.Remove(SessionServiceTable);
+            HttpContext.Session.Remove(SessionServiceFloor);
+        }
+
+        private void ApplyOrderingSessionToViewBag()
+        {
+            var channel = HttpContext.Session.GetString(SessionOrderChannel) ?? OrderChannelKiosk;
+            ViewBag.OrderChannel = channel;
+            ViewBag.IsQrFlow = channel == OrderChannelQr;
+            if (channel == OrderChannelQr)
+            {
+                var table = HttpContext.Session.GetString(SessionServiceTable);
+                var floor = HttpContext.Session.GetString(SessionServiceFloor);
+                ViewBag.ServiceTable = table;
+                ViewBag.ServiceFloor = floor;
+                ViewBag.LocationLabel = BuildLocationLabel(floor, table);
+            }
+        }
+
+        private static string BuildLocationLabel(string floor, string table)
+        {
+            if (string.IsNullOrEmpty(table)) return null;
+            if (!string.IsNullOrEmpty(floor))
+                return $"Floor {floor} · Table {table}";
+            return $"Table {table}";
+        }
+
+        private void RestoreQrSessionFromOrder(Order order)
+        {
+            if (order == null) return;
+            if (string.Equals(order.OrderChannel, OrderChannelQr, StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrEmpty(order.TableNumber))
+            {
+                HttpContext.Session.SetString(SessionOrderChannel, OrderChannelQr);
+                HttpContext.Session.SetString(SessionServiceTable, order.TableNumber);
+                if (!string.IsNullOrEmpty(order.Floor))
+                    HttpContext.Session.SetString(SessionServiceFloor, order.Floor);
+                else
+                    HttpContext.Session.Remove(SessionServiceFloor);
+                HttpContext.Session.SetString(SessionDiningType, order.DiningType ?? "DineIn");
+            }
         }
 
         public IActionResult Index()
         {
-            // Clear session when starting a new order (new session starts)
             HttpContext.Session.Remove("FirstOrderTime");
+            SetKioskChannelDefaults();
             return View();
         }
 
+        /// <summary>Table QR entry point. Example: /Customer/Kiosk/Qr?table=12&amp;floor=2</summary>
+        [HttpGet]
+        public IActionResult Qr(string table, string floor = null)
+        {
+            if (string.IsNullOrWhiteSpace(table))
+            {
+                TempData["ErrorMessage"] = "Invalid table link. Please scan the QR code on your table.";
+                return RedirectToAction("Index");
+            }
+
+            table = table.Trim();
+            if (table.Length > 32)
+                table = table[..32];
+            floor = string.IsNullOrWhiteSpace(floor) ? null : floor.Trim();
+            if (floor != null && floor.Length > 32)
+                floor = floor[..32];
+
+            HttpContext.Session.Remove("FirstOrderTime");
+            HttpContext.Session.SetString(SessionOrderChannel, OrderChannelQr);
+            HttpContext.Session.SetString(SessionServiceTable, table);
+            if (floor != null)
+                HttpContext.Session.SetString(SessionServiceFloor, floor);
+            else
+                HttpContext.Session.Remove(SessionServiceFloor);
+
+            HttpContext.Session.SetString(SessionDiningType, "DineIn");
+            TempData["DiningType"] = "DineIn";
+            return RedirectToAction("ChooseExperience");
+        }
 
         [HttpPost]
         public IActionResult SelectDining(string diningType)
         {
             TempData["DiningType"] = diningType;
+            HttpContext.Session.SetString(SessionDiningType, diningType);
 
             if (diningType == "TakeOut")
             {
@@ -44,6 +132,7 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
         public IActionResult ChooseExperience()
         {
             ViewBag.DiningType = TempData["DiningType"];
+            ApplyOrderingSessionToViewBag();
             return View();
         }
 
@@ -66,6 +155,8 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             ViewBag.IsReorder = isReorder;
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
+            ViewBag.MenuCategories = _menuCategories.KioskTabs;
+            ApplyOrderingSessionToViewBag();
             return View(items);
         }
 
@@ -96,6 +187,8 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             
             // Only show available items from Stock collection
             var items = await _stockService.GetAvailableAsync() ?? new List<InventoryItem>();
+            ViewBag.MenuCategories = _menuCategories.KioskTabs;
+            ApplyOrderingSessionToViewBag();
             return View(items);
         }
 
@@ -146,11 +239,20 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                     total = subtotal + tax;
                 }
 
-                var random = new Random();
-                string orderNumber = random.Next(1000, 9999).ToString();
+                var orderNumber = await _orderService.CreateUniqueOrderNumberAsync();
 
-                // Get dining type from TempData
-                string diningType = TempData["DiningType"]?.ToString() ?? "DineIn";
+                string diningType = TempData["DiningType"]?.ToString()
+                    ?? HttpContext.Session.GetString(SessionDiningType)
+                    ?? "DineIn";
+
+                var channel = HttpContext.Session.GetString(SessionOrderChannel) ?? OrderChannelKiosk;
+                string tableNumber = null;
+                string floor = null;
+                if (string.Equals(channel, OrderChannelQr, StringComparison.OrdinalIgnoreCase))
+                {
+                    tableNumber = HttpContext.Session.GetString(SessionServiceTable);
+                    floor = HttpContext.Session.GetString(SessionServiceFloor);
+                }
 
                 // Check 1-hour time limit using session
                 string sessionKey = "FirstOrderTime";
@@ -183,9 +285,13 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
                     OrderNumber = orderNumber,
                     OrderDate = DateTime.UtcNow,
                     Status = "Pending",
-                    OrderType = experienceType, // ✅ Store the order type (AlaCarte/Unlimited)
-                    DiningType = diningType, // ✅ Store the dining type (DineIn/TakeOut)
-                    TableNumber = null, // ✅ Table numbers removed - all reorders through confirmation page
+                    OrderType = experienceType,
+                    DiningType = diningType,
+                    OrderChannel = channel,
+                    TableNumber = tableNumber,
+                    Floor = floor,
+                    PaymentMethod = "Cash",
+                    PaymentStatus = "Pending",
                     Subtotal = subtotal,
                     Tax = tax,
                     Total = total,
@@ -198,9 +304,7 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             }
             catch (Exception ex)
             {
-                // Log the error for debugging
-                Console.WriteLine($"Error creating order: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                _logger.LogError(ex, "Error creating order");
                 return Json(new { success = false, message = $"Error creating order: {ex.Message}" });
             }
         }
@@ -214,6 +318,8 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             var order = await _orderService.GetByOrderNumberAsync(orderNumber);
             if (order == null)
                 return RedirectToAction("Index");
+
+            RestoreQrSessionFromOrder(order);
 
             // Preserve order type and dining type for reordering
             if (!string.IsNullOrEmpty(order.OrderType))
@@ -356,7 +462,7 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error cancelling order: {ex.Message}");
+                _logger.LogError(ex, "Error cancelling order");
                 return Json(new { success = false, message = $"Error cancelling order: {ex.Message}" });
             }
         }

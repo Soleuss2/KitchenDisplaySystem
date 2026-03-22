@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Kapitak PakPak | Kiosk";
     Layout = "~/Areas/Customer/Views/Shared/_Layout.cshtml";
 }
@@ -13,6 +13,10 @@
     <h1>Welcome to Kapitak PakPak</h1>
     <h2>How would you like to enjoy your wings?</h2>
     <p>Choose your dining preference below</p>
+    <p style="font-size: 0.95rem; color: #555; max-width: 520px; margin: 12px auto 0; line-height: 1.5;">
+        <i class="bi bi-qr-code" style="color: #ff6b35;"></i>
+        <strong>At a table?</strong> Scan the QR code on your table to order from your phone—no kiosk line.
+    </p>
 
     <!-- Error Message Display -->
     @if (TempData["ErrorMessage"] != null)
@@ -34,8 +38,8 @@
                    name="orderNumber" 
                    placeholder="Enter your order number" 
                    required 
-                   pattern="[0-9]{4}" 
-                   maxlength="4"
+                   pattern="[0-9]{4,14}" 
+                   maxlength="14"
                    style="padding: 12px 20px; border: 2px solid #ff6b35; border-radius: 25px; font-size: 1.1rem; width: 250px; text-align: center;"
                    oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
             <button type="submit" 
@@ -46,7 +50,7 @@
             </button>
         </form>
         <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
-            Lost your order? Enter your 4-digit order number to view your order status
+            Lost your order? Enter your order number (shown on your confirmation screen) to view status
         </p>
     </div>
 

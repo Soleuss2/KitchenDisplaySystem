@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using SelfOrderingSystemKiosk.Services;
 using System;
 using System.Linq;
@@ -13,49 +14,22 @@ namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
     {
         private readonly OrderService _orderService;
         private readonly StockService _stockService;
+        private readonly ILogger<KitchenController> _logger;
 
-        public KitchenController(OrderService orderService, StockService stockService)
+        public KitchenController(OrderService orderService, StockService stockService, ILogger<KitchenController> logger)
         {
             _orderService = orderService;
             _stockService = stockService;
+            _logger = logger;
         }
 
         // GET: Kitchen/Kitchen/Index
         [HttpGet]
         public async Task<IActionResult> Index([FromQuery] string? dateFilter = "all")
         {
-            var allOrders = await _orderService.GetAllAsync();
-            IEnumerable<SelfOrderingSystemKiosk.Areas.Customer.Models.Order> orders = allOrders;
-
-            // Apply date filter
-            var now = DateTime.UtcNow;
-            var filter = string.IsNullOrEmpty(dateFilter) ? "all" : dateFilter.ToLower();
-            switch (filter)
-            {
-                case "day":
-                    var startOfDay = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc);
-                    var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
-                    orders = allOrders.Where(o => o.OrderDate >= startOfDay && o.OrderDate <= endOfDay);
-                    break;
-                case "week":
-                    var startOfWeek = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(-(int)now.DayOfWeek);
-                    var endOfWeek = startOfWeek.AddDays(7).AddTicks(-1);
-                    orders = allOrders.Where(o => o.OrderDate >= startOfWeek && o.OrderDate <= endOfWeek);
-                    break;
-                case "month":
-                    var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-                    var endOfMonth = startOfMonth.AddMonths(1).AddTicks(-1);
-                    orders = allOrders.Where(o => o.OrderDate >= startOfMonth && o.OrderDate <= endOfMonth);
-                    break;
-                case "all":
-                default:
-                    // No filtering, show all orders
-                    orders = allOrders;
-                    break;
-            }
-
+            var orders = await _orderService.GetOrdersForKitchenAsync(dateFilter);
             ViewBag.DateFilter = dateFilter;
-            return View(orders.OrderByDescending(o => o.OrderDate).ToList()); // latest orders first
+            return View(orders.OrderByDescending(o => o.OrderDate).ToList());
         }
 
         // Optional: view single order
@@ -105,13 +79,12 @@ namespace SelfOrderingSystemKiosk.Areas.Kitchen.Controllers
                         {
                             try
                             {
-                                await _stockService.DecrementStockAsync(orderItem.ItemName, orderItem.Quantity);
-                                Console.WriteLine($"Decremented stock: {orderItem.ItemName} by {orderItem.Quantity}");
+                                await _stockService.DecrementStockAsync(orderItem.ItemName, orderItem.Quantity, "Sale", "Order", order.Id);
+                                _logger.LogInformation("Decremented stock for {Item} by {Qty}", orderItem.ItemName, orderItem.Quantity);
                             }
                             catch (Exception ex)
                             {
-                                // Log error but continue processing other items
-                                Console.WriteLine($"Error decrementing stock for {orderItem.ItemName}: {ex.Message}");
+                                _logger.LogError(ex, "Error decrementing stock for {Item}", orderItem.ItemName);
                             }
                         }
                     }

@@ -1,4 +1,4 @@
-﻿@model SelfOrderingSystemKiosk.Areas.Customer.Models.Order
+@model SelfOrderingSystemKiosk.Areas.Customer.Models.Order
 @{
     ViewData["Title"] = "Order Confirmation";
     Layout = "~/Areas/Customer/Views/Shared/_Layout.cshtml";
@@ -309,7 +309,25 @@
                         <i class="bi bi-@(Model.OrderType == "Unlimited" ? "infinity" : "menu-button-wide")"></i> 
                         @(Model.OrderType == "Unlimited" ? "Unlimited Experience" : "Ala Carte")
                     </span>
+                    @if (string.Equals(Model.OrderChannel, "Qr", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="badge bg-success p-2 px-3 ms-1" style="font-size: 0.9rem;"><i class="bi bi-qr-code"></i> QR order</span>
+                    }
+                    else if (string.Equals(Model.OrderChannel, "Kiosk", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(Model.OrderChannel))
+                    {
+                        <span class="badge bg-secondary p-2 px-3 ms-1" style="font-size: 0.9rem;"><i class="bi bi-display"></i> Kiosk</span>
+                    }
                 </div>
+                @if (!string.IsNullOrEmpty(Model.TableNumber) || !string.IsNullOrEmpty(Model.Floor))
+                {
+                    <p class="mb-3" style="font-size: 1rem;">
+                        <i class="bi bi-geo-alt-fill text-warning"></i>
+                        <strong>Service location:</strong>
+                        @if (!string.IsNullOrEmpty(Model.Floor)) { <span>Floor @Model.Floor</span> }
+                        @if (!string.IsNullOrEmpty(Model.Floor) && !string.IsNullOrEmpty(Model.TableNumber)) { <span> · </span> }
+                        @if (!string.IsNullOrEmpty(Model.TableNumber)) { <span>Table @Model.TableNumber</span> }
+                    </p>
+                }
 
                 <!-- Order Items -->
                 @if (Model.Items != null && Model.Items.Any())
@@ -484,16 +502,17 @@
         statusBadge.className = 'status-badge-large ' + orderStatus;
     }
 
-    // Auto-refresh status every 5 seconds
+    // Poll order status: 5s while in progress; 20s when completed/canceled (page reloads on transition)
     let refreshInterval;
     const indicator = document.getElementById('refreshIndicator');
-    
+    const statusNorm = "@Model.Status".toLowerCase().replace(' ', '-');
+    const pollMs = (statusNorm === 'completed' || statusNorm === 'canceled') ? 20000 : 5000;
+
     function checkOrderStatus() {
         if (document.hidden) {
             return; // Don't check if page is hidden
         }
 
-        // Show indicator
         if (indicator) {
             indicator.classList.add('show');
         }
@@ -506,29 +525,24 @@
                 return response.json();
             })
             .then(data => {
-                // Hide indicator
                 if (indicator) {
                     indicator.classList.remove('show');
                 }
 
                 if (data.status && data.status !== '@Model.Status') {
-                    // Status changed, reload page to show updated status
                     location.reload();
                 }
             })
             .catch(error => {
                 console.log('Status check failed:', error);
-                // Hide indicator on error
                 if (indicator) {
                     indicator.classList.remove('show');
                 }
             });
     }
 
-    // Start checking status
-    refreshInterval = setInterval(checkOrderStatus, 5000);
+    refreshInterval = setInterval(checkOrderStatus, pollMs);
 
-    // Clear interval when page is hidden, restart when visible
     document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
             if (refreshInterval) {
@@ -536,16 +550,13 @@
                 refreshInterval = null;
             }
         } else {
-            // Restart interval when page becomes visible
             if (!refreshInterval) {
-                refreshInterval = setInterval(checkOrderStatus, 5000);
-                // Check immediately when page becomes visible
+                refreshInterval = setInterval(checkOrderStatus, pollMs);
                 checkOrderStatus();
             }
         }
     });
 
-    // Initial check after page loads
     setTimeout(checkOrderStatus, 2000);
 
     // Cancel order function

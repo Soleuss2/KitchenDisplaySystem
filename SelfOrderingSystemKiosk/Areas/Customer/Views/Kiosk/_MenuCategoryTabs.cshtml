@@ -1,0 +1,18 @@
+@model IReadOnlyList<SelfOrderingSystemKiosk.Models.MenuCategoryOption>
+<div class="menu-tabs">
+    <button type="button" class="active" data-filter="all"><i class="bi bi-grid-1x2-fill"></i> All Items</button>
+    @foreach (var cat in Model)
+    {
+        <button type="button" data-filter="@cat.Key">
+            @if (!string.IsNullOrEmpty(cat.TabImageUrl))
+            {
+                <img src="@Url.Content(cat.TabImageUrl)" alt="@cat.DisplayName" />
+            }
+            else if (!string.IsNullOrEmpty(cat.TabIconClass))
+            {
+                <i class="bi bi-@cat.TabIconClass"></i>
+            }
+            @cat.DisplayName
+        </button>
+    }
+</div>

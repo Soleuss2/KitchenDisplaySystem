@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Choose Your Wing Experience";
     Layout = "~/Areas/Customer/Views/Shared/_Layout.cshtml";
 }
@@ -14,6 +14,14 @@
     </form>
 
     <h1>Choose Your Wing Experience</h1>
+    @if (ViewBag.IsQrFlow == true && ViewBag.LocationLabel != null)
+    {
+        <div style="max-width: 640px; margin: 0 auto 24px; padding: 14px 18px; background: rgba(255,255,255,0.95); border-radius: 14px; border: 2px solid #ff6b35; text-align: center;">
+            <i class="bi bi-qr-code" style="font-size: 1.4rem; color: #ff6b35; vertical-align: middle;"></i>
+            <strong style="color: #333;"> Table order:</strong>
+            <span style="color: #ff6b35; font-weight: 700;">@ViewBag.LocationLabel</span>
+        </div>
+    }
 
     <div class="choices">
         <form method="post" asp-action="SelectExperience">

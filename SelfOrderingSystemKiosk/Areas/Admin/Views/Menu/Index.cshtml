@@ -1,7 +1,11 @@
-﻿@model IEnumerable<SelfOrderingSystemKiosk.Models.InventoryItem>
+@model IEnumerable<SelfOrderingSystemKiosk.Models.InventoryItem>
+@using SelfOrderingSystemKiosk.Models
 @{
     ViewData["Title"] = "Menu & Inventory Management";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    var menuCats = ViewBag.MenuCategories as IEnumerable<MenuCategoryOption>;
+    var menuFormCats = ViewBag.MenuCategoryFormList as IEnumerable<MenuCategoryOption>;
+    var catFilter = ViewBag.CategoryFilter as string ?? "all";
 }
 
 <div class="content">
@@ -9,7 +13,7 @@
         <div>
             <p style="margin-top: 0;">Manage menu items, inventory, prices, and availability all in one place.</p>
             <p style="color: #666; font-size: 0.9em; margin-top: 5px;">
-                <i class="bi bi-info-circle"></i> Showing items from MongoDB Stock collection.
+                <i class="bi bi-info-circle"></i> Showing items from MongoDB Stock collection. Rows with availability <strong>Unavailable</strong> sort to the bottom. Use category <strong>Unavailable</strong> or the switch to hide items from the kiosk instead of deleting.
             </p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -23,6 +27,34 @@
     {
         <div class="alert alert-success">@ViewBag.Message</div>
     }
+
+    <form method="get" asp-area="Admin" asp-controller="Menu" asp-action="Index" style="margin-bottom: 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <label for="categoryFilter" style="font-weight: 600; margin: 0;">Category</label>
+        <select name="categoryFilter" id="categoryFilter" onchange="this.form.submit()" style="padding: 8px 12px; min-width: 220px; border: 2px solid #ddd; border-radius: 5px;">
+            @if (catFilter == "all")
+            {
+                <option value="all" selected>All categories</option>
+            }
+            else
+            {
+                <option value="all">All categories</option>
+            }
+            @if (menuCats != null)
+            {
+                foreach (var c in menuCats)
+                {
+                    if (catFilter == c.Key)
+                    {
+                        <option value="@c.Key" selected>@c.DisplayName</option>
+                    }
+                    else
+                    {
+                        <option value="@c.Key">@c.DisplayName</option>
+                    }
+                }
+            }
+        </select>
+    </form>
 
     <div class="table-container">
         @if (Model != null && Model.Any())
@@ -81,8 +113,8 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <button type="button" 
-                                            class="btn btn-edit edit-item-btn" 
+                                    <button type="button"
+                                            class="btn btn-edit edit-item-btn"
                                             data-id="@i.Id"
                                             data-name="@i.Item"
                                             data-category="@i.Category"
@@ -90,15 +122,11 @@
                                             data-stock="@i.CurrentStock"
                                             data-unit="@i.Unit"
                                             data-reorder="@i.ReorderLevel"
+                                            data-menuorder="@i.MenuOrder"
                                             data-availability="@i.Availability"
-                                            data-image="@i.Image"
-                                            onclick="const btn = this; openEditModal(btn.getAttribute('data-id'), btn.getAttribute('data-name'), btn.getAttribute('data-category'), btn.getAttribute('data-price'), btn.getAttribute('data-stock'), btn.getAttribute('data-unit'), btn.getAttribute('data-reorder'), btn.getAttribute('data-availability'), btn.getAttribute('data-image'));">
+                                            data-image="@i.Image">
                                         Edit
                                     </button>
-                                    <form asp-action="Delete" method="post" style="display:inline;">
-                                        <input type="hidden" name="id" value="@i.Id" />
-                                        <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure you want to delete this item?')">Delete</button>
-                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -306,11 +334,10 @@
         const availability = isAvailable ? 'Available' : 'Unavailable';
         const label = document.getElementById('label-' + itemId);
         
-        // Update label immediately for better UX
+        // Optimistic label until server responds (reload on success)
         label.textContent = availability;
         label.className = 'availability-label ' + availability.toLowerCase();
         
-        // Send AJAX request
         fetch('/Admin/Menu/ToggleAvailability', {
             method: 'POST',
             headers: {
@@ -320,21 +347,8 @@
         })
         .then(response => {
             if (response.ok) {
-                // Show success message
-                const message = availability === 'Available' 
-                    ? 'Item is now available on the menu!' 
-                    : 'Item is now hidden from the menu.';
-                
-                // Create temporary success message
-                const successMsg = document.createElement('div');
-                successMsg.className = 'alert alert-success';
-                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 15px 20px; border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
-                successMsg.textContent = message;
-                document.body.appendChild(successMsg);
-                
-                setTimeout(() => {
-                    successMsg.remove();
-                }, 3000);
+                // Full reload so list order matches server (unavailable rows at bottom)
+                window.location.reload();
             } else {
                 // Revert on error
                 const checkbox = document.querySelector(`[data-id="${itemId}"]`);
@@ -412,7 +426,7 @@
     }
 
     // Edit Modal Functions
-    function openEditModal(id, name, category, price, stock, unit, reorderLevel, availability, image) {
+    function openEditModal(id, name, category, price, stock, unit, reorderLevel, menuOrder, availability, image) {
         try {
             const modal = document.getElementById('editItemModal');
             if (!modal) {
@@ -442,6 +456,8 @@
             if (stockField) stockField.value = stock || '0';
             if (unitField) unitField.value = unit || 'pcs';
             if (reorderField) reorderField.value = reorderLevel || '10';
+            const menuOrderField = document.getElementById('editMenuOrder');
+            if (menuOrderField) menuOrderField.value = menuOrder !== undefined && menuOrder !== null && menuOrder !== '' ? menuOrder : '0';
             if (availabilityField) availabilityField.value = availability || 'Available';
             if (imageField) imageField.value = image || '';
             
@@ -480,6 +496,7 @@
                 button.getAttribute('data-stock'),
                 button.getAttribute('data-unit'),
                 button.getAttribute('data-reorder'),
+                button.getAttribute('data-menuorder'),
                 button.getAttribute('data-availability'),
                 button.getAttribute('data-image')
             );
@@ -568,15 +585,24 @@
                 <div class="form-group">
                     <label>Category *</label>
                     <select name="category" required>
-                        <option value="Wings">Wings</option>
-                        <option value="Appetizer">Appetizer</option>
-                        <option value="Add Ons">Add Ons</option>
+                        @if (menuCats != null)
+                        {
+                            foreach (var c in menuCats)
+                            {
+                                <option value="@c.Key">@c.DisplayName</option>
+                            }
+                        }
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Price (₱) *</label>
                     <input type="number" step="0.01" name="price" placeholder="0.00" required min="0" />
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label>Menu order</label>
+                <input type="number" name="menuOrder" value="0" min="0" title="Higher numbers appear first on the kiosk" />
             </div>
             
             <div class="form-row">
@@ -653,15 +679,31 @@
                 <div class="form-group">
                     <label>Category *</label>
                     <select name="Category" id="editCategory" required>
-                        <option value="Wings">Wings</option>
-                        <option value="Appetizer">Appetizer</option>
-                        <option value="Add Ons">Add Ons</option>
+                        @if (menuFormCats != null)
+                        {
+                            foreach (var c in menuFormCats)
+                            {
+                                <option value="@c.Key">@c.DisplayName</option>
+                            }
+                        }
+                        else if (menuCats != null)
+                        {
+                            foreach (var c in menuCats)
+                            {
+                                <option value="@c.Key">@c.DisplayName</option>
+                            }
+                        }
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Price (₱) *</label>
                     <input type="number" step="0.01" name="Price" id="editPrice" placeholder="0.00" required min="0" />
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label>Menu order</label>
+                <input type="number" name="MenuOrder" id="editMenuOrder" value="0" min="0" title="Higher numbers appear first on the kiosk" />
             </div>
             
             <div class="form-row">

@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace SelfOrderingSystemKiosk.Models
@@ -14,6 +14,10 @@ namespace SelfOrderingSystemKiosk.Models
 
         [BsonElement("Category")]
         public string Category { get; set; }
+
+        /// <summary>Higher values sort first on kiosk and admin menu list; ties use item name.</summary>
+        [BsonElement("menuOrder")]
+        public int MenuOrder { get; set; }
 
         [BsonElement("CurrentStock")]
         public int CurrentStock { get; set; }

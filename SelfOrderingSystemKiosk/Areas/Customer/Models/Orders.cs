@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.Text.Json.Serialization;
 
@@ -50,12 +50,35 @@ namespace SelfOrderingSystemKiosk.Areas.Customer.Models
         [JsonPropertyName("status")]
         public string Status { get; set; }
 
+        /// <summary>Kiosk (fixed terminal) or Qr (table scan).</summary>
+        [BsonElement("orderChannel")]
+        [JsonPropertyName("orderChannel")]
+        public string OrderChannel { get; set; }
+
+        /// <summary>Optional floor or zone label for dine-in routing (e.g. "2" or "Upstairs").</summary>
+        [BsonElement("floor")]
+        [JsonPropertyName("floor")]
+        public string Floor { get; set; }
+
+        /// <summary>Cash, GCash, Card — extend when integrating a PSP.</summary>
+        [BsonElement("paymentMethod")]
+        [JsonPropertyName("paymentMethod")]
+        public string PaymentMethod { get; set; }
+
+        /// <summary>Pending, Paid, Failed — cash often Pending until staff confirms.</summary>
+        [BsonElement("paymentStatus")]
+        [JsonPropertyName("paymentStatus")]
+        public string PaymentStatus { get; set; }
+
         public Order()
         {
             Items = new List<OrderItem>();
             OrderDate = DateTime.UtcNow;
             Status = "Pending";
             OrderType = "AlaCarte";
+            OrderChannel = "Kiosk";
+            PaymentMethod = "Cash";
+            PaymentStatus = "Pending";
         }
     }
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SelfOrderingSystemKiosk.Models;
 using SelfOrderingSystemKiosk.Services;
@@ -81,9 +81,18 @@ namespace SelfOrderingSystemKiosk.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(InventoryItem updatedItem)
         {
+            var previous = await _stockService.GetByIdAsync(updatedItem.Id);
             updatedItem.Status = updatedItem.CurrentStock <= updatedItem.ReorderLevel ? "Low Stock" : "In Stock";
-            // Availability will be automatically set by UpdateAsync based on stock
             await _stockService.UpdateAsync(updatedItem);
+            if (previous != null && previous.CurrentStock != updatedItem.CurrentStock)
+            {
+                await _stockService.RecordAdjustmentAsync(
+                    updatedItem.Id,
+                    updatedItem.Item ?? "",
+                    previous.CurrentStock,
+                    updatedItem.CurrentStock,
+                    "Manual inventory edit");
+            }
             TempData["Message"] = $"Item '{updatedItem.Item}' updated successfully!";
             return RedirectToAction("Index");
         }

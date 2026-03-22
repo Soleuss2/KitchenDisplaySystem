@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SelfOrderingSystemKiosk.Models.InventoryItem>
+@model IEnumerable<SelfOrderingSystemKiosk.Models.InventoryItem>
 @{
     Layout = "~/Areas/Customer/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Unlimited Menu";
@@ -21,6 +21,12 @@
         <!-- LEFT: MENU LIST -->
         <div class="menu-list">
             <div class="menu-header">
+                @if (ViewBag.IsQrFlow == true && ViewBag.LocationLabel != null)
+                {
+                    <div style="background: rgba(255,107,53,0.12); border: 1px solid #ff6b35; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; font-size: 0.95rem;">
+                        <i class="bi bi-qr-code" style="color: #ff6b35;"></i> <strong>Deliver to:</strong> @ViewBag.LocationLabel
+                    </div>
+                }
                 <h1>CHICKEN WINGS MENU</h1>
                 <p>Endless Wings — ₱377 per head</p>
                 <h2 style="margin-top:20px;">UNLIMITED MENU</h2>
@@ -35,13 +41,19 @@
                 </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="menu-tabs">
-                <button class="active" data-filter="all"><i class="bi bi-grid-1x2-fill"></i> All Items</button>
-                <button data-filter="Wings"><img src="~/images/wings.png" alt="Wings Icon" /> Wings</button>
-                <button data-filter="Appetizer"><img src="~/images/appetize.png" alt="Appetizer Icon" /> Appetizer</button>
-                <button data-filter="Add Ons"><i class="bi bi-basket"></i> Add-Ons</button>
-            </div>
+            @{
+                var kioskCats = ViewBag.MenuCategories as IReadOnlyList<SelfOrderingSystemKiosk.Models.MenuCategoryOption>;
+            }
+            @if (kioskCats != null && kioskCats.Count > 0)
+            {
+                @await Html.PartialAsync("_MenuCategoryTabs", kioskCats)
+            }
+            else
+            {
+                <div class="menu-tabs">
+                    <button type="button" class="active" data-filter="all"><i class="bi bi-grid-1x2-fill"></i> All Items</button>
+                </div>
+            }
 
             <!-- Scrollable Menu Items -->
             <div class="menu-scroll">
@@ -273,9 +285,8 @@
                 });
         }
 
-        // Update timer immediately and then every second
         updateTimer();
-        timerInterval = setInterval(updateTimer, 1000);
+        timerInterval = setInterval(updateTimer, 15000);
     })();
 
 </script>
