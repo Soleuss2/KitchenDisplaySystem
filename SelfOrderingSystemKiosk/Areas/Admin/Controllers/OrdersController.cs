@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SelfOrderingSystemKiosk.Services;
 using SelfOrderingSystemKiosk.Areas.Customer.Models;
@@ -30,15 +30,15 @@ namespace SelfOrderingSystemKiosk.Controllers
             if (filter == "today")
             {
                 var todayStart = DateTime.UtcNow.Date;
-                var todayEnd = todayStart.AddDays(1).AddTicks(-1);
-                var todayOrders = await _orderService.GetByDateRangeAsync(todayStart, todayEnd);
+                var todayOrders = await _orderService.GetByDateRangeHalfOpenAsync(todayStart, todayStart.AddDays(1));
                 orders = todayOrders ?? new List<Order>();
                 ViewBag.FilterMessage = "Showing today's orders";
             }
             else
             {
-                var allOrders = await _orderService.GetAllAsync();
-                orders = allOrders ?? new List<Order>();
+                var historyStart = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                var ordersInRange = await _orderService.GetByDateRangeHalfOpenAsync(historyStart, DateTime.UtcNow.AddDays(1));
+                orders = ordersInRange ?? new List<Order>();
             }
 
             return View(orders);

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SelfOrderingSystemKiosk.Models;
 using SelfOrderingSystemKiosk.Services;
@@ -11,57 +11,81 @@ namespace SelfOrderingSystemKiosk.Controllers
     {
         private readonly StockService _stockService;
         private readonly IWebHostEnvironment _environment;
+        private readonly MenuCategoryRegistry _menuCategories;
 
-        public MenuController(StockService stockService, IWebHostEnvironment environment)
+        public MenuController(StockService stockService, IWebHostEnvironment environment, MenuCategoryRegistry menuCategories)
         {
             _stockService = stockService;
             _environment = environment;
+            _menuCategories = menuCategories;
         }
 
-        public async Task<IActionResult> Index(string message = null)
+        public async Task<IActionResult> Index(string message = null, string categoryFilter = null)
         {
             ViewData["Title"] = "Menu & Inventory Management";
             ViewBag.Message = message;
-            var items = await _stockService.GetAllAsync();
+            ViewBag.MenuCategories = _menuCategories.All;
+            var filter = string.IsNullOrWhiteSpace(categoryFilter) || string.Equals(categoryFilter, "all", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : categoryFilter.Trim();
+            ViewBag.CategoryFilter = filter ?? "all";
+
+            var allItems = await _stockService.GetAllAsync();
+            ViewBag.MenuCategoryFormList = BuildEditCategoryOptions(allItems);
+
+            var items = allItems;
+            if (filter != null && _menuCategories.IsValidKey(filter))
+                items = allItems.Where(i => string.Equals(i.Category, filter, StringComparison.Ordinal)).ToList();
+
             return View(items);
+        }
+
+        private List<MenuCategoryOption> BuildEditCategoryOptions(IEnumerable<InventoryItem> items)
+        {
+            var list = _menuCategories.All.ToList();
+            var keys = new HashSet<string>(list.Select(c => c.Key), StringComparer.Ordinal);
+            foreach (var i in items)
+            {
+                if (string.IsNullOrWhiteSpace(i.Category)) continue;
+                if (keys.Add(i.Category))
+                    list.Add(new MenuCategoryOption { Key = i.Category, DisplayName = i.Category + " (legacy)" });
+            }
+
+            return list.OrderBy(c => c.DisplayName, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
 
         [HttpPost]
-        public async Task<IActionResult> Add(string name, string category, decimal price, string availability, int currentStock, string unit, int reorderLevel, IFormFile imageFile)
+        public async Task<IActionResult> Add(string name, string category, decimal price, string availability, int currentStock, string unit, int reorderLevel, int menuOrder, IFormFile imageFile)
         {
             if (!string.IsNullOrEmpty(name))
             {
+                if (!_menuCategories.IsValidKey(category))
+                    return RedirectToAction("Index", new { message = "Invalid category selected.", categoryFilter = "all" });
+
                 string imagePath = null;
-                
-                // Handle image upload if provided
+
                 if (imageFile != null && imageFile.Length > 0)
-                {
                     imagePath = await SaveImageFile(imageFile);
-                }
-                
-                // Set default image based on category if no image uploaded
+
                 if (string.IsNullOrEmpty(imagePath))
-                {
-                    imagePath = category switch
-                    {
-                        "Wings" => "/images/wings.png",
-                        "Appetizer" => "/images/appetize.png",
-                        "Add Ons" => "/images/wings.png",
-                        _ => "/images/wings.png"
-                    };
-                }
+                    imagePath = _menuCategories.GetDefaultImage(category);
+
+                var effectiveAvailability = string.Equals(category, "Unavailable", StringComparison.Ordinal)
+                    ? "Unavailable"
+                    : (currentStock == 0 ? "Unavailable" : (availability ?? "Available"));
 
                 var newItem = new InventoryItem
                 {
                     Item = name,
                     Category = category,
                     Price = price,
-                    Availability = currentStock == 0 ? "Unavailable" : (availability ?? "Available"),
+                    Availability = effectiveAvailability,
                     Image = imagePath,
                     CurrentStock = currentStock,
                     Unit = unit ?? "pcs",
                     ReorderLevel = reorderLevel,
+                    MenuOrder = menuOrder,
                     Status = currentStock <= reorderLevel ? "Low Stock" : "In Stock"
                 };
 
@@ -72,48 +96,32 @@ namespace SelfOrderingSystemKiosk.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Delete(string id)
-        {
-            await _stockService.DeleteAsync(id);
-            return RedirectToAction("Index", new { message = "Menu item deleted successfully!" });
-        }
-
-        [HttpPost]
         public async Task<IActionResult> Edit(InventoryItem updated, IFormFile imageFile)
         {
             var existing = await _stockService.GetByIdAsync(updated.Id);
             if (existing != null)
             {
-                // Handle image upload if a new image is provided
+                var categoryOk = _menuCategories.IsValidKey(updated.Category)
+                    || string.Equals(updated.Category, existing.Category, StringComparison.Ordinal);
+                if (!categoryOk)
+                    return RedirectToAction("Index", new { message = "Invalid category selected." });
+
                 if (imageFile != null && imageFile.Length > 0)
                 {
-                    // Save new image
                     var newImagePath = await SaveImageFile(imageFile);
                     if (!string.IsNullOrEmpty(newImagePath))
-                    {
                         updated.Image = newImagePath;
-                    }
                 }
                 else
-                {
-                    // Preserve the existing image if no new image uploaded
                     updated.Image = existing.Image ?? updated.Image;
-                }
-                
-                // Set default image based on category if image is still empty
+
                 if (string.IsNullOrEmpty(updated.Image))
-                {
-                    updated.Image = updated.Category switch
-                    {
-                        "Wings" => "/images/wings.png",
-                        "Appetizer" => "/images/appetize.png",
-                        "Add Ons" => "/images/wings.png",
-                        _ => "/images/wings.png"
-                    };
-                }
-                
+                    updated.Image = _menuCategories.GetDefaultImage(updated.Category);
+
+                if (string.Equals(updated.Category, "Unavailable", StringComparison.Ordinal))
+                    updated.Availability = "Unavailable";
+
                 updated.Status = updated.CurrentStock <= updated.ReorderLevel ? "Low Stock" : "In Stock";
-                // Availability will be automatically set by UpdateAsync based on stock
                 await _stockService.UpdateAsync(updated);
             }
 

@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = null;
 }
 <!DOCTYPE html>
@@ -6,7 +6,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KDS Admin Panel</title>
+    <title>@(ViewData["Title"] != null ? $"{ViewData["Title"]} · KDS Admin" : "KDS Admin")</title>
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -21,7 +21,10 @@
 
             <ul class="nav-links">
                 <li><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a></li>
+                <li><a asp-area="Admin" asp-controller="Sales" asp-action="Index"><i class="bi bi-graph-up-arrow"></i> <span>Sales &amp; reports</span></a></li>
                 <li><a asp-area="Admin" asp-controller="Menu" asp-action="Index"><i class="bi bi-menu-button-wide"></i> <span>Menu & Inventory</span></a></li>
+                <li><a asp-area="Admin" asp-controller="StockMovement" asp-action="Index"><i class="bi bi-arrow-left-right"></i> <span>Stock history</span></a></li>
+                <li><a asp-area="Admin" asp-controller="TableQr" asp-action="Index"><i class="bi bi-qr-code"></i> <span>Print table QR codes</span></a></li>
                 <li><a asp-area="Kitchen" asp-controller="Kitchen" asp-action="Index"><i class="bi bi-receipt"></i> <span>Orders</span></a></li>
             </ul>
 

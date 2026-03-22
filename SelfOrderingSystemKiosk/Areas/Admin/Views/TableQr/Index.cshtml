@@ -1,0 +1,111 @@
+@model TableQrIndexViewModel
+@{
+    ViewData["Title"] = "Print QR codes for your tables";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .qr-help { background: #f8f9fa; border-left: 4px solid #ff6b35; padding: 14px 18px; border-radius: 0 10px 10px 0; margin-bottom: 24px; font-size: 1.05rem; line-height: 1.55; }
+    .qr-step { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 20px 22px; margin-bottom: 18px; max-width: 640px; }
+    .qr-step-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #ff6b35; color: #fff; border-radius: 50%; font-weight: 700; font-size: 1rem; margin-right: 10px; vertical-align: middle; }
+    .qr-step h3 { margin: 0 0 10px; font-size: 1.15rem; display: flex; align-items: center; }
+    .qr-step .hint { color: #555; font-size: 0.95rem; margin-top: 8px; line-height: 1.45; }
+    .qr-big-btn { padding: 16px 28px !important; font-size: 1.15rem !important; border-radius: 12px !important; }
+    .qr-section-title { font-size: 1.35rem; margin: 0 0 8px; color: #222; }
+    details.qr-advanced { max-width: 640px; margin-top: 8px; margin-bottom: 24px; border: 1px dashed #ccc; border-radius: 10px; padding: 12px 16px; background: #fafafa; }
+    details.qr-advanced summary { cursor: pointer; font-weight: 600; color: #444; }
+    details.qr-advanced summary:hover { color: #ff6b35; }
+</style>
+
+<div class="content">
+    <p style="font-size: 1.1rem; color: #444; max-width: 720px; margin-bottom: 18px; margin-top: 0;">
+        Customers scan the code with their phone camera to open your menu. Their <strong>table number</strong> is filled in automatically so the kitchen knows where to send the food.
+    </p>
+
+    <div class="qr-help">
+        <strong>What you’ll do:</strong> type your table numbers → (optional) add a floor → click the orange button → use your browser’s <strong>Print</strong> (or <strong>Save as PDF</strong>) → cut out each code and place it on the matching table.
+    </div>
+
+    <form asp-action="Print" method="post" id="printForm">
+        @Html.AntiForgeryToken()
+
+        <div class="qr-step">
+            <h3><span class="qr-step-num">1</span> List your table numbers</h3>
+            <p class="hint" style="margin-top: 0;">Put <strong>one number on each line</strong>. You can use numbers or names (e.g. <em>A1</em>, <em>Patio-3</em>). Skip empty lines.</p>
+            <textarea asp-for="TablesBulk" rows="10" aria-label="Table numbers, one per line" style="width: 100%; max-width: 100%; padding: 14px 16px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.1rem; line-height: 1.5;" placeholder="Example:&#10;1&#10;2&#10;3&#10;4&#10;5"></textarea>
+            <span asp-validation-for="TablesBulk" style="color: #c0392b; display: block; margin-top: 10px; font-weight: 600;"></span>
+            <p class="hint">You can also separate tables with commas on one line (e.g. 1, 2, 3) if you prefer.</p>
+        </div>
+
+        <div class="qr-step">
+            <h3><span class="qr-step-num">2</span> Same floor for all? (optional)</h3>
+            <p class="hint" style="margin-top: 0;">Only fill this if <strong>every</strong> table on your list is on the same floor or area. Leave blank if tables are mixed or you only have one level.</p>
+            <label asp-for="Floor" style="display: block; font-weight: 600; margin-bottom: 8px;">@Html.DisplayNameFor(m => m.Floor)</label>
+            <input asp-for="Floor" style="width: 100%; max-width: 320px; padding: 12px 14px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.05rem;" placeholder="e.g. 2 or Upstairs" />
+        </div>
+
+        <details class="qr-advanced">
+            <summary>Advanced — website address (for IT / hosting)</summary>
+            <p style="margin: 12px 0 8px; font-size: 0.95rem; color: #555;">
+                The system will use this address inside the QR so phones open the correct website. If you leave it empty, it uses the address you’re using now in the browser (good for testing in the store).
+            </p>
+            <p style="margin: 0 0 10px; font-size: 0.9rem; color: #666;">
+                <strong>Currently used:</strong> <code style="background: #eee; padding: 2px 8px; border-radius: 4px; word-break: break-all;">@Model.ResolvedBaseUrlPreview</code>
+            </p>
+            <label asp-for="PublicSiteUrl" style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.95rem;">Override address (https://…)</label>
+            <input asp-for="PublicSiteUrl" type="url" style="width: 100%; max-width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px;" placeholder="https://your-restaurant-website.com" />
+            <p style="margin: 10px 0 0; font-size: 0.85rem; color: #777;">Your developer can also set this permanently in the app settings file (<code>QrOrdering:PublicSiteUrl</code>).</p>
+        </details>
+
+        <div class="qr-step" style="border-color: #ff6b35; border-width: 2px;">
+            <h3><span class="qr-step-num">3</span> Make the printable page</h3>
+            <p class="hint" style="margin-top: 0;">Opens a new page with one QR picture per table. Then use <strong>Print</strong> on your computer or phone.</p>
+            <button type="submit" class="btn btn-add qr-big-btn">
+                <i class="bi bi-printer" style="font-size: 1.2em;"></i> Make printable QR sheet
+            </button>
+        </div>
+    </form>
+
+    <hr style="margin: 36px 0; border: none; border-top: 2px solid #eee; max-width: 640px;" />
+
+    <h2 class="qr-section-title" style="font-size: 1.2rem;">Save one picture at a time</h2>
+    <p style="color: #555; max-width: 640px; line-height: 1.5;">
+        Use this if you only need a single QR file to drop into a poster or message. Your browser will download a <strong>.png</strong> image.
+    </p>
+    <div class="qr-step" style="max-width: 640px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+            <div>
+                <label for="dlTable" style="display: block; font-weight: 600; margin-bottom: 6px;">Table number or name</label>
+                <input type="text" id="dlTable" style="padding: 12px 14px; border: 2px solid #ddd; border-radius: 10px; width: 160px; font-size: 1.05rem;" placeholder="12" />
+            </div>
+            <div>
+                <label for="dlFloor" style="display: block; font-weight: 600; margin-bottom: 6px;">Floor (optional)</label>
+                <input type="text" id="dlFloor" style="padding: 12px 14px; border: 2px solid #ddd; border-radius: 10px; width: 140px; font-size: 1.05rem;" placeholder="—" />
+            </div>
+            <div>
+                <button type="button" class="btn btn-add qr-big-btn" id="btnDownloadQr" style="background: #444 !important;">
+                    <i class="bi bi-download"></i> Download one QR picture
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnDownloadQr').addEventListener('click', function () {
+            const table = document.getElementById('dlTable').value.trim();
+            if (!table) {
+                alert('Please type a table number or name first.');
+                return;
+            }
+            const floor = document.getElementById('dlFloor').value.trim();
+            const adv = document.querySelector('details.qr-advanced input[name="PublicSiteUrl"]');
+            const pub = adv ? adv.value.trim() : '';
+            let url = '@Url.Action("Download", "TableQr", new { area = "Admin" })' + '?table=' + encodeURIComponent(table);
+            if (floor) url += '&floor=' + encodeURIComponent(floor);
+            if (pub) url += '&publicSiteUrl=' + encodeURIComponent(pub);
+            window.location.href = url;
+        });
+    </script>
+}

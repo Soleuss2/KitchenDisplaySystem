@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using SelfOrderingSystemKiosk.Areas.Admin.Models;
@@ -38,6 +38,12 @@ builder.Services.Configure<MongoDBSettings>(options =>
 builder.Services.Configure<AuthenticationSettings>(
     builder.Configuration.GetSection("Authentication"));
 
+builder.Services.Configure<QrOrderingSettings>(
+    builder.Configuration.GetSection("QrOrdering"));
+
+builder.Services.Configure<MenuCategoriesSettings>(
+    builder.Configuration.GetSection("MenuCategories"));
+
 // ------------------
 // MongoDB DI Setup
 // ------------------
@@ -52,6 +58,8 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 
 // Register services that use IMongoClient instead of IMongoDatabase
 // Each service gets the database itself internally
+builder.Services.AddSingleton<StockMovementService>();
+builder.Services.AddSingleton<MenuCategoryRegistry>();
 builder.Services.AddSingleton<StockService>();
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<AuthService>();
@@ -59,9 +67,10 @@ builder.Services.AddSingleton<AuthService>();
 // Other services
 builder.Services.AddSingleton<KitchenDatabase>();
 builder.Services.AddSingleton<OrderService>();
+builder.Services.AddSingleton<QrCodeService>();
 builder.Services.AddScoped<ChickenService>();
 
-builder.Services.AddSession();
+builder.Services.AddHostedService<OrderIndexesHostedService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -69,7 +78,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/Admin/Account/Login";
         options.AccessDeniedPath = "/Admin/Account/AccessDenied";
     });
-// ✅ Enable Session Support (future use)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {

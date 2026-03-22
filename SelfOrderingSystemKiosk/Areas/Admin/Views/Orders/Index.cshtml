@@ -1,12 +1,11 @@
-﻿@model List<SelfOrderingSystemKiosk.Areas.Customer.Models.Order>
+@model List<SelfOrderingSystemKiosk.Areas.Customer.Models.Order>
 @{
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Orders Management";
 }
 
 <div class="content">
-    <h1>🧾 Orders Management</h1>
-    <p>Track and update order statuses efficiently.</p>
+    <p style="margin-top: 0;">Track and update order statuses efficiently.</p>
 
     @if (ViewBag.FilterMessage != null)
     {

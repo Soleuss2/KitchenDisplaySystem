@@ -1,4 +1,4 @@
-﻿using MongoDB.Driver;
+using MongoDB.Driver;
 using SelfOrderingSystemKiosk.Areas.Customer.Models;
 
 
@@ -15,6 +15,74 @@ namespace SelfOrderingSystemKiosk.Services
 
         public async Task<List<Order>> GetAllAsync() =>
             await _orders.Find(_ => true).ToListAsync();
+
+        /// <summary>Start inclusive, end exclusive (typical for day/week/month ranges in UTC).</summary>
+        public async Task<List<Order>> GetByDateRangeHalfOpenAsync(DateTime startUtcInclusive, DateTime endUtcExclusive)
+        {
+            return await _orders
+                .Find(o => o.OrderDate >= startUtcInclusive && o.OrderDate < endUtcExclusive)
+                .ToListAsync();
+        }
+
+        /// <summary>Kitchen board: filter in MongoDB by date preset instead of loading all orders.</summary>
+        public async Task<List<Order>> GetOrdersForKitchenAsync(string? dateFilter)
+        {
+            var now = DateTime.UtcNow;
+            var filter = string.IsNullOrEmpty(dateFilter) ? "all" : dateFilter.ToLowerInvariant();
+            List<Order> orders = filter switch
+            {
+                "day" => await GetByDateRangeHalfOpenAsync(
+                    new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(1)),
+                "week" =>
+                    await GetByDateRangeHalfOpenAsync(
+                        new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(-(int)now.DayOfWeek),
+                        new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Utc).AddDays(-(int)now.DayOfWeek).AddDays(7)),
+                "month" =>
+                    await GetByDateRangeHalfOpenAsync(
+                        new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc),
+                        new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1)),
+                _ => await GetAllAsync()
+            };
+
+            return orders;
+        }
+
+        /// <summary>Numeric order id (10 digits): yyMMdd + 4 random digits, with collision retry.</summary>
+        public async Task<string> CreateUniqueOrderNumberAsync(CancellationToken cancellationToken = default)
+        {
+            for (var attempt = 0; attempt < 16; attempt++)
+            {
+                var candidate = $"{DateTime.UtcNow:yyMMdd}{Random.Shared.Next(1000, 10000)}";
+                var count = await _orders.CountDocumentsAsync(o => o.OrderNumber == candidate, cancellationToken: cancellationToken);
+                if (count == 0)
+                    return candidate;
+                await Task.Delay(50, cancellationToken);
+            }
+
+            return $"{DateTime.UtcNow:yyMMdd}{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
+        }
+
+        public async Task EnsureIndexesAsync(CancellationToken cancellationToken = default)
+        {
+            await _orders.Indexes.CreateOneAsync(
+                new CreateIndexModel<Order>(
+                    Builders<Order>.IndexKeys.Ascending(o => o.OrderNumber),
+                    new CreateIndexOptions { Name = "ix_orders_orderNumber" }),
+                cancellationToken: cancellationToken);
+
+            await _orders.Indexes.CreateOneAsync(
+                new CreateIndexModel<Order>(
+                    Builders<Order>.IndexKeys.Ascending(o => o.OrderDate),
+                    new CreateIndexOptions { Name = "ix_orders_orderDate" }),
+                cancellationToken: cancellationToken);
+
+            await _orders.Indexes.CreateOneAsync(
+                new CreateIndexModel<Order>(
+                    Builders<Order>.IndexKeys.Ascending(o => o.Status),
+                    new CreateIndexOptions { Name = "ix_orders_status" }),
+                cancellationToken: cancellationToken);
+        }
 
         // Get order by ID
         public async Task<Order> GetByIdAsync(string id)
